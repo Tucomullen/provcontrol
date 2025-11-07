@@ -1,8 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Users, FileCheck, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, Users, FileCheck, TrendingUp, Activity, Star, Clock, Award, MessageSquare, Plus, ArrowRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Incident, Provider, Rating, Document } from "@shared/schema";
+import { formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
 
 export default function Dashboard() {
   const { user, isPresidente } = useAuth();
@@ -34,131 +39,255 @@ export default function Dashboard() {
     totalDocuments: documents?.length || 0,
   };
 
+  const recentIncidents = incidents?.slice(0, 5) || [];
+  const topProviders = providers?.sort((a, b) => 
+    parseFloat(b.averageRating || "0") - parseFloat(a.averageRating || "0")
+  ).slice(0, 3) || [];
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "abierta": return "bg-warning";
+      case "presupuestada": return "bg-info";
+      case "aprobada": return "bg-success";
+      case "en_curso": return "bg-primary";
+      case "resuelta": return "bg-verified";
+      default: return "bg-muted";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "abierta": return "Abierta";
+      case "presupuestada": return "Presupuestada";
+      case "aprobada": return "Aprobada";
+      case "en_curso": return "En Curso";
+      case "resuelta": return "Resuelta";
+      default: return status;
+    }
+  };
+
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2" data-testid="text-dashboard-title">
-          Dashboard
-        </h1>
-        <p className="text-muted-foreground">
-          Bienvenido, {user?.firstName}. {isPresidente && "Como presidente, tienes acceso completo a todas las funciones de control."}
-        </p>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {user?.role !== "proveedor" && (
-          <>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Incidencias Activas</CardTitle>
-                <AlertCircle className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold" data-testid="stat-incidents-open">{stats.incidentsOpen}</div>
-                <p className="text-xs text-muted-foreground">
-                  Incidencias pendientes de resolución
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Proveedores</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold" data-testid="stat-providers">{stats.totalProviders}</div>
-                <p className="text-xs text-muted-foreground">
-                  Profesionales en el directorio
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Documentos</CardTitle>
-                <FileCheck className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold" data-testid="stat-documents">{stats.totalDocuments}</div>
-                <p className="text-xs text-muted-foreground">
-                  Actas, facturas y documentación
-                </p>
-              </CardContent>
-            </Card>
-          </>
-        )}
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Calificaciones</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="stat-ratings">{stats.totalRatings}</div>
-            <p className="text-xs text-muted-foreground">
-              Ratings verificados en el sistema
+      {/* Welcome Hero */}
+      <div className="bg-gradient-to-r from-primary via-primary/90 to-innovation rounded-2xl p-8 shadow-xl text-white">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-4xl font-bold mb-2" data-testid="text-dashboard-title">
+              Hola, {user?.firstName}! 👋
+            </h1>
+            <p className="text-lg text-white/90 mb-4">
+              {isPresidente 
+                ? "Gestiona tu comunidad con el control total como presidente" 
+                : user?.role === "propietario"
+                ? "Mantente al día con las novedades de tu comunidad"
+                : "Gestiona tus servicios y valoraciones"}
             </p>
-          </CardContent>
-        </Card>
+            <div className="flex gap-3">
+              <Button className="bg-white text-primary hover:bg-white/90 shadow-lg">
+                <Plus className="w-4 h-4 mr-2" />
+                Nueva Incidencia
+              </Button>
+              <Button variant="outline" className="border-white/30 text-white hover:bg-white/10">
+                Ver Todo
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </div>
+          <Avatar className="h-20 w-20 ring-4 ring-white/20 hidden md:block">
+            <AvatarImage src={user?.profileImageUrl || undefined} />
+            <AvatarFallback className="text-2xl bg-white/20">
+              {user?.firstName?.[0]}{user?.lastName?.[0]}
+            </AvatarFallback>
+          </Avatar>
+        </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Últimas Incidencias</CardTitle>
-            <CardDescription>Incidencias reportadas recientemente</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {user?.role !== "proveedor" && incidents && incidents.length > 0 ? (
-              <div className="space-y-4">
-                {incidents.slice(0, 5).map((incident) => (
-                  <div key={incident.id} className="flex items-start justify-between border-b border-border pb-3 last:border-0">
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{incident.title}</p>
-                      <p className="text-xs text-muted-foreground">{incident.location}</p>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(incident.createdAt!).toLocaleDateString()}
-                    </span>
-                  </div>
-                ))}
+      {/* Stats Grid */}
+      {user?.role !== "proveedor" && (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="border-l-4 border-l-warning hover-elevate">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Incidencias Activas</CardTitle>
+              <div className="h-10 w-10 rounded-full bg-warning/10 flex items-center justify-center">
+                <AlertCircle className="h-5 w-5 text-warning" />
               </div>
-            ) : (
-              <p className="text-sm text-muted-foreground py-8 text-center">
-                No hay incidencias registradas
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-warning" data-testid="stat-incidents-open">
+                {stats.incidentsOpen}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Pendientes de resolución
               </p>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Actividad Reciente</CardTitle>
-            <CardDescription>Últimos movimientos en la comunidad</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {ratings && ratings.length > 0 ? (
-                ratings.slice(0, 5).map((rating) => (
-                  <div key={rating.id} className="flex items-start justify-between border-b border-border pb-3 last:border-0">
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">Nueva calificación verificada</p>
-                      <p className="text-xs text-muted-foreground">Rating: {rating.overallRating}/5</p>
+          <Card className="border-l-4 border-l-primary hover-elevate">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Proveedores</CardTitle>
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Users className="h-5 w-5 text-primary" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-primary" data-testid="stat-providers">
+                {stats.totalProviders}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Profesionales verificados
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-verified hover-elevate">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Valoraciones</CardTitle>
+              <div className="h-10 w-10 rounded-full bg-verified/10 flex items-center justify-center">
+                <Star className="h-5 w-5 text-verified fill-verified" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-verified" data-testid="stat-ratings">
+                {stats.totalRatings}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Total de reseñas
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-info hover-elevate">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Documentos</CardTitle>
+              <div className="h-10 w-10 rounded-full bg-info/10 flex items-center justify-center">
+                <FileCheck className="h-5 w-5 text-info" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-info" data-testid="stat-documents">
+                {stats.totalDocuments}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Archivos compartidos
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Recent Incidents */}
+        {user?.role !== "proveedor" && (
+          <Card className="shadow-lg">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-primary" />
+                    Actividad Reciente
+                  </CardTitle>
+                  <CardDescription>Últimas incidencias reportadas</CardDescription>
+                </div>
+                <Button variant="ghost" size="sm">
+                  Ver Todas
+                  <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {recentIncidents.length > 0 ? (
+                recentIncidents.map((incident) => (
+                  <div 
+                    key={incident.id}
+                    className="flex items-start gap-3 p-3 rounded-lg hover-elevate cursor-pointer border border-border/50"
+                  >
+                    <div className={`h-2 w-2 rounded-full mt-2 ${getStatusColor(incident.status)}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm line-clamp-1">{incident.title}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs">
+                          {getStatusLabel(incident.status)}
+                        </Badge>
+                        {incident.createdAt && (
+                          <span className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(incident.createdAt), {
+                              addSuffix: true,
+                              locale: es,
+                            })}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(rating.createdAt!).toLocaleDateString()}
-                    </span>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-muted-foreground py-8 text-center">
-                  No hay actividad reciente
-                </p>
+                <div className="text-center py-8 text-muted-foreground">
+                  <Activity className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p>No hay incidencias recientes</p>
+                </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Top Providers */}
+        {user?.role !== "proveedor" && (
+          <Card className="shadow-lg">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-accent" />
+                    Proveedores Top
+                  </CardTitle>
+                  <CardDescription>Mejor valorados de la comunidad</CardDescription>
+                </div>
+                <Button variant="ghost" size="sm">
+                  Ver Todos
+                  <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {topProviders.length > 0 ? (
+                topProviders.map((provider, index) => (
+                  <div 
+                    key={provider.id}
+                    className="flex items-center gap-4 p-3 rounded-lg hover-elevate cursor-pointer border border-border/50"
+                  >
+                    <div className="flex items-center justify-center h-8 w-8 rounded-full bg-gradient-to-br from-accent to-accent/80 text-white font-bold text-sm">
+                      #{index + 1}
+                    </div>
+                    <Avatar className="h-12 w-12 ring-2 ring-border">
+                      <AvatarImage src={provider.logoUrl || undefined} />
+                      <AvatarFallback className="bg-primary text-white">
+                        {provider.companyName.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm line-clamp-1">{provider.companyName}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <div className="flex items-center gap-1">
+                          <Star className="w-3 h-3 fill-accent text-accent" />
+                          <span className="text-xs font-medium">{provider.averageRating || "0.0"}</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">•</span>
+                        <span className="text-xs text-muted-foreground">
+                          {provider.totalJobs || 0} trabajos
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Award className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p>No hay proveedores aún</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
