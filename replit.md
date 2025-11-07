@@ -28,6 +28,17 @@ Provcontrol is a mobile-first property management platform designed for Spanish-
 **UI Simplification:**
 - ✅ Removed redundant Feed page - Dashboard now serves as the main landing page (route "/")
 - Simplified navigation menu by consolidating activity view into Dashboard
+- Removed redundant "Nueva Incidencia" and "Ver Todo" buttons from Dashboard banner
+
+**New Incident Detail Page:**
+- ✅ Created comprehensive incident detail view at `/incidencias/:id`
+- Displays complete incident information with description and photos
+- Shows budget comparison table with all received proposals
+- Highlights approved budget with visual indicator
+- Displays assigned provider (clickeable to navigate to provider profile)
+- Timeline view showing complete incident history with status updates
+- Shows final cost and invoice for resolved incidents
+- All incident cards now navigate to detail page on click
 
 ## User Preferences
 

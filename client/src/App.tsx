@@ -12,6 +12,7 @@ import NotFound from "@/pages/NotFound";
 import Landing from "@/pages/Landing";
 import Dashboard from "@/pages/Dashboard";
 import Incidents from "@/pages/Incidents";
+import IncidentDetail from "@/pages/IncidentDetail";
 import Providers from "@/pages/Providers";
 import Documents from "@/pages/Documents";
 import Forum from "@/pages/Forum";
@@ -36,9 +37,10 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
+      <Route path="/incidencias/:id" component={IncidentDetail} />
       <Route path="/incidencias" component={Incidents} />
-      <Route path="/proveedores" component={Providers} />
       <Route path="/proveedores/:id" component={ProviderProfile} />
+      <Route path="/proveedores" component={Providers} />
       <Route path="/presupuestos" component={Budgets} />
       <Route path="/contabilidad" component={Accounting} />
       <Route path="/documentos" component={Documents} />

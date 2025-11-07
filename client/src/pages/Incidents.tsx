@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 export default function Incidents() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -232,7 +234,12 @@ export default function Incidents() {
           </Card>
         ) : filteredIncidents && filteredIncidents.length > 0 ? (
           filteredIncidents.map((incident) => (
-            <Card key={incident.id} className="hover-elevate" data-testid={`card-incident-${incident.id}`}>
+            <Card 
+              key={incident.id} 
+              className="hover-elevate cursor-pointer" 
+              data-testid={`card-incident-${incident.id}`}
+              onClick={() => setLocation(`/incidencias/${incident.id}`)}
+            >
               <CardHeader className="pb-3">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="flex-1">
