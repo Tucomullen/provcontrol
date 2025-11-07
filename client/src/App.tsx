@@ -19,7 +19,6 @@ import Budgets from "@/pages/Budgets";
 import Settings from "@/pages/Settings";
 import Invitations from "@/pages/Invitations";
 import Accounting from "@/pages/Accounting";
-import Feed from "@/pages/Feed";
 import ProviderProfile from "@/pages/ProviderProfile";
 
 function Router() {
@@ -36,8 +35,7 @@ function Router() {
 
   return (
     <Switch>
-      <Route path="/" component={Feed} />
-      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/" component={Dashboard} />
       <Route path="/incidencias" component={Incidents} />
       <Route path="/proveedores" component={Providers} />
       <Route path="/proveedores/:id" component={ProviderProfile} />

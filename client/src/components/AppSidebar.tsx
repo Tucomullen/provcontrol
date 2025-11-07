@@ -8,7 +8,6 @@ import {
   BarChart3,
   UserPlus,
   Wallet,
-  Activity,
   LayoutDashboard,
 } from "lucide-react";
 import {
@@ -31,14 +30,8 @@ import { LogOut } from "lucide-react";
 
 const menuItems = [
   {
-    title: "Feed",
-    url: "/",
-    icon: Activity,
-    roles: ["presidente", "propietario", "proveedor"],
-  },
-  {
     title: "Dashboard",
-    url: "/dashboard",
+    url: "/",
     icon: LayoutDashboard,
     roles: ["presidente", "propietario", "proveedor"],
   },

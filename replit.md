@@ -11,7 +11,6 @@ Provcontrol is a mobile-first property management platform designed for Spanish-
 ## Recent Changes (November 7, 2025)
 
 **Social Network Features Completed:**
-- ✅ Feed page with activity timeline combining incidents and ratings
 - ✅ Interactive provider profiles with tabs (Valoraciones, Portfolio, Historial)
 - ✅ Visual rating modal with multi-step wizard and photo uploads
 - ✅ Rating card component with provider responses and helpful votes
@@ -25,6 +24,10 @@ Provcontrol is a mobile-first property management platform designed for Spanish-
 - Fixed VerifiedBadge component ref handling for TooltipTrigger compatibility
 - Added comprehensive data-testid attributes for testing automation
 - Cleaned duplicate method declarations in IStorage interface
+
+**UI Simplification:**
+- ✅ Removed redundant Feed page - Dashboard now serves as the main landing page (route "/")
+- Simplified navigation menu by consolidating activity view into Dashboard
 
 ## User Preferences
 
