@@ -14,6 +14,7 @@ import {
   insertIncidentUpdateSchema,
   insertCommunityInvitationSchema,
   insertTransactionSchema,
+  insertNotificationSchema,
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -647,6 +648,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting transaction:", error);
       res.status(500).json({ message: "Failed to delete transaction" });
+    }
+  });
+
+  app.get("/api/notifications", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const notifications = await storage.getNotifications(userId, limit);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  app.get("/api/notifications/unread-count", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const count = await storage.getUnreadNotificationsCount(userId);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+      res.status(500).json({ message: "Failed to fetch unread count" });
+    }
+  });
+
+  app.post("/api/notifications/:id/read", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const success = await storage.markNotificationAsRead(req.params.id, userId);
+      
+      if (!success) {
+        return res.status(403).json({ message: "Unauthorized access to notification" });
+      }
+      
+      res.json({ message: "Notification marked as read" });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
+  app.post("/api/notifications/mark-all-read", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      await storage.markAllNotificationsAsRead(userId);
+      res.json({ message: "All notifications marked as read" });
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      res.status(500).json({ message: "Failed to mark all notifications as read" });
     }
   });
 

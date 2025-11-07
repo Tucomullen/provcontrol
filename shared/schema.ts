@@ -41,6 +41,16 @@ export const transactionCategoryEnum = pgEnum("transaction_category", [
   "derrama",
   "otro"
 ]);
+export const notificationTypeEnum = pgEnum("notification_type", [
+  "incidencia_nueva",
+  "incidencia_actualizada",
+  "presupuesto_nuevo",
+  "presupuesto_aprobado",
+  "rating_nuevo",
+  "foro_nuevo",
+  "foro_respuesta",
+  "comunidad_aviso"
+]);
 export const providerCategoryEnum = pgEnum("provider_category", [
   "fontaneria",
   "electricidad",
@@ -348,6 +358,27 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({
 export type Transaction = typeof transactions.$inferSelect;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 
+// Notifications table - Sistema de notificaciones
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: notificationTypeEnum("type").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  relatedEntityId: varchar("related_entity_id"),
+  relatedEntityType: varchar("related_entity_type", { length: 50 }),
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  isRead: true,
+  createdAt: true,
+});
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   community: one(communities, {
@@ -365,6 +396,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   forumPosts: many(forumPosts),
   forumReplies: many(forumReplies),
   transactions: many(transactions),
+  notifications: many(notifications),
 }));
 
 export const communitiesRelations = relations(communities, ({ one, many }) => ({
@@ -508,6 +540,13 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
   }),
   createdBy: one(users, {
     fields: [transactions.createdById],
+    references: [users.id],
+  }),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
     references: [users.id],
   }),
 }));
