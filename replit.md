@@ -19,10 +19,12 @@ Provcontrol is a mobile-first property management platform designed for Spanish-
 - ✅ All features tested end-to-end and validated
 
 **Critical Bug Fixes:**
+- ✅ **RESOLVED: Ratings API empty response bug** - Fixed duplicate `getRatings` methods in DatabaseStorage causing community_id filter to be ignored. Removed shadowing method that only supported providerId filtering. All 8 test ratings now correctly returned.
 - Fixed ProviderProfile to correctly filter provider from cached list
 - Fixed RatingModal to calculate overallRating before submission
 - Fixed VerifiedBadge component ref handling for TooltipTrigger compatibility
 - Added comprehensive data-testid attributes for testing automation
+- Cleaned duplicate method declarations in IStorage interface
 
 ## User Preferences
 

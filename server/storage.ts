@@ -102,9 +102,6 @@ export interface IStorage {
   markAllNotificationsAsRead(userId: string): Promise<void>;
   createNotification(notification: InsertNotification): Promise<Notification>;
   
-  getRatings(providerId: string): Promise<Rating[]>;
-  getRating(id: string): Promise<Rating | undefined>;
-  createRating(rating: InsertRating): Promise<Rating>;
   addProviderReply(id: string, providerId: string, reply: string): Promise<Rating | undefined>;
   getRatingStats(providerId: string): Promise<{
     averageOverall: number;
@@ -479,24 +476,6 @@ export class DatabaseStorage implements IStorage {
   async createNotification(notificationData: InsertNotification): Promise<Notification> {
     const [notification] = await db.insert(notifications).values(notificationData).returning();
     return notification;
-  }
-
-  async getRatings(providerId: string): Promise<Rating[]> {
-    return await db
-      .select()
-      .from(ratings)
-      .where(eq(ratings.providerId, providerId))
-      .orderBy(desc(ratings.createdAt));
-  }
-
-  async getRating(id: string): Promise<Rating | undefined> {
-    const [rating] = await db.select().from(ratings).where(eq(ratings.id, id));
-    return rating;
-  }
-
-  async createRating(ratingData: InsertRating): Promise<Rating> {
-    const [rating] = await db.insert(ratings).values(ratingData).returning();
-    return rating;
   }
 
   async addProviderReply(id: string, providerId: string, reply: string): Promise<Rating | undefined> {
