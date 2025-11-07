@@ -77,32 +77,13 @@ export default function Dashboard() {
             <h1 className="text-4xl font-bold mb-2" data-testid="text-dashboard-title">
               Hola, {user?.firstName}! 👋
             </h1>
-            <p className="text-lg text-white/90 mb-4">
+            <p className="text-lg text-white/90">
               {isPresidente 
                 ? "Gestiona tu comunidad con el control total como presidente" 
                 : user?.role === "propietario"
                 ? "Mantente al día con las novedades de tu comunidad"
                 : "Gestiona tus servicios y valoraciones"}
             </p>
-            <div className="flex gap-3">
-              <Button 
-                className="bg-white text-primary hover:bg-white/90 shadow-lg" 
-                data-testid="button-new-incident"
-                onClick={() => setLocation("/incidencias")}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Nueva Incidencia
-              </Button>
-              <Button 
-                variant="outline" 
-                className="border-white/30 text-white hover:bg-white/10" 
-                data-testid="button-view-all"
-                onClick={() => setLocation("/incidencias")}
-              >
-                Ver Todo
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
           </div>
           <Avatar className="h-20 w-20 ring-4 ring-white/20 hidden md:block">
             <AvatarImage src={user?.profileImageUrl || undefined} />
