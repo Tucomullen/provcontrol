@@ -8,9 +8,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Incident, Provider, Rating, Document } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { useLocation } from "wouter";
 
 export default function Dashboard() {
   const { user, isPresidente } = useAuth();
+  const [, setLocation] = useLocation();
 
   const { data: incidents } = useQuery<Incident[]>({
     queryKey: ["/api/incidents"],
@@ -83,11 +85,20 @@ export default function Dashboard() {
                 : "Gestiona tus servicios y valoraciones"}
             </p>
             <div className="flex gap-3">
-              <Button className="bg-white text-primary hover:bg-white/90 shadow-lg" data-testid="button-new-incident">
+              <Button 
+                className="bg-white text-primary hover:bg-white/90 shadow-lg" 
+                data-testid="button-new-incident"
+                onClick={() => setLocation("/incidencias")}
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Nueva Incidencia
               </Button>
-              <Button variant="outline" className="border-white/30 text-white hover:bg-white/10" data-testid="button-view-all">
+              <Button 
+                variant="outline" 
+                className="border-white/30 text-white hover:bg-white/10" 
+                data-testid="button-view-all"
+                onClick={() => setLocation("/incidencias")}
+              >
                 Ver Todo
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
@@ -188,7 +199,12 @@ export default function Dashboard() {
                   </CardTitle>
                   <CardDescription>Últimas incidencias reportadas</CardDescription>
                 </div>
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setLocation("/incidencias")}
+                  data-testid="button-view-all-incidents"
+                >
                   Ver Todas
                   <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
@@ -200,6 +216,8 @@ export default function Dashboard() {
                   <div 
                     key={incident.id}
                     className="flex items-start gap-3 p-3 rounded-lg hover-elevate cursor-pointer border border-border/50"
+                    onClick={() => setLocation("/incidencias")}
+                    data-testid={`card-incident-${incident.id}`}
                   >
                     <div className={`h-2 w-2 rounded-full mt-2 ${getStatusColor(incident.status)}`} />
                     <div className="flex-1 min-w-0">
@@ -242,7 +260,12 @@ export default function Dashboard() {
                   </CardTitle>
                   <CardDescription>Mejor valorados de la comunidad</CardDescription>
                 </div>
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setLocation("/proveedores")}
+                  data-testid="button-view-all-providers"
+                >
                   Ver Todos
                   <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
@@ -254,6 +277,8 @@ export default function Dashboard() {
                   <div 
                     key={provider.id}
                     className="flex items-center gap-4 p-3 rounded-lg hover-elevate cursor-pointer border border-border/50"
+                    onClick={() => setLocation(`/proveedores/${provider.id}`)}
+                    data-testid={`card-provider-${provider.id}`}
                   >
                     <div className="flex items-center justify-center h-8 w-8 rounded-full bg-gradient-to-br from-accent to-accent/80 text-white font-bold text-sm">
                       #{index + 1}
