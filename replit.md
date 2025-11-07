@@ -8,6 +8,22 @@ Provcontrol is a mobile-first property management platform designed for Spanish-
 
 **Key Differentiator**: Unlike traditional property management software controlled by administrators, Provcontrol is contracted directly by the community to ensure technological continuity and prevent vendor lock-in.
 
+## Recent Changes (November 7, 2025)
+
+**Social Network Features Completed:**
+- ✅ Feed page with activity timeline combining incidents and ratings
+- ✅ Interactive provider profiles with tabs (Valoraciones, Portfolio, Historial)
+- ✅ Visual rating modal with multi-step wizard and photo uploads
+- ✅ Rating card component with provider responses and helpful votes
+- ✅ Clickable provider cards linking to detailed profiles
+- ✅ All features tested end-to-end and validated
+
+**Critical Bug Fixes:**
+- Fixed ProviderProfile to correctly filter provider from cached list
+- Fixed RatingModal to calculate overallRating before submission
+- Fixed VerifiedBadge component ref handling for TooltipTrigger compatibility
+- Added comprehensive data-testid attributes for testing automation
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

@@ -15,14 +15,16 @@ export function VerifiedBadge({ className, showLabel = true }: VerifiedBadgeProp
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Badge 
-          variant="default" 
-          className={`bg-chart-2 hover:bg-chart-2/90 ${className}`}
-          data-testid="badge-verified"
-        >
-          <ShieldCheck className="w-3 h-3 mr-1" />
-          {showLabel && "Verificado"}
-        </Badge>
+        <span className="inline-block">
+          <Badge 
+            variant="default" 
+            className={`bg-chart-2 hover:bg-chart-2/90 ${className}`}
+            data-testid="badge-verified"
+          >
+            <ShieldCheck className="w-3 h-3 mr-1" />
+            {showLabel && "Verificado"}
+          </Badge>
+        </span>
       </TooltipTrigger>
       <TooltipContent className="max-w-xs">
         <p className="text-sm">
