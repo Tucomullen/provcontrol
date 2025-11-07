@@ -83,11 +83,11 @@ export default function Dashboard() {
                 : "Gestiona tus servicios y valoraciones"}
             </p>
             <div className="flex gap-3">
-              <Button className="bg-white text-primary hover:bg-white/90 shadow-lg">
+              <Button className="bg-white text-primary hover:bg-white/90 shadow-lg" data-testid="button-new-incident">
                 <Plus className="w-4 h-4 mr-2" />
                 Nueva Incidencia
               </Button>
-              <Button variant="outline" className="border-white/30 text-white hover:bg-white/10">
+              <Button variant="outline" className="border-white/30 text-white hover:bg-white/10" data-testid="button-view-all">
                 Ver Todo
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>

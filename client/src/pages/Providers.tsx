@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -185,9 +186,11 @@ export default function Providers() {
                       <div className="text-xs text-muted-foreground">Valoraciones</div>
                     </div>
                   </div>
-                  <Button className="w-full mt-4 bg-primary hover:bg-primary/90" size="lg">
-                    Ver Perfil
-                  </Button>
+                  <Link href={`/proveedores/${provider.id}`}>
+                    <Button className="w-full mt-4 bg-primary hover:bg-primary/90" size="lg">
+                      Ver Perfil
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
             ))}
@@ -227,11 +230,11 @@ export default function Providers() {
             ))
           ) : filteredProviders && filteredProviders.length > 0 ? (
             filteredProviders.map((provider) => (
-              <Card 
-                key={provider.id} 
-                className="hover-elevate active-elevate-2 transition-all duration-200 border-border/60 hover:border-primary/30 hover:shadow-lg cursor-pointer"
-                data-testid={`card-provider-${provider.id}`}
-              >
+              <Link key={provider.id} href={`/proveedores/${provider.id}`}>
+                <Card 
+                  className="hover-elevate active-elevate-2 transition-all duration-200 border-border/60 hover:border-primary/30 hover:shadow-lg cursor-pointer"
+                  data-testid={`card-provider-${provider.id}`}
+                >
                 <CardHeader className="pb-3">
                   <div className="flex items-start gap-4">
                     <Avatar className="h-16 w-16 ring-2 ring-border">
@@ -290,6 +293,7 @@ export default function Providers() {
                   )}
                 </CardContent>
               </Card>
+              </Link>
             ))
           ) : (
             <Card className="col-span-full border-dashed">
