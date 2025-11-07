@@ -1,0 +1,70 @@
+### I. Introducción, Objetivo y Alcance
+
+**Nombre del Producto (Temporal):** Provcontrol
+**Objetivo Primario:** Desarrollar una aplicación móvil y portal web (MVP) que sirva como una **"tienda de reseñas y comparativas de calidad" integrada y especializada para el mantenimiento inmobiliario**. La misión es dotar a los propietarios, y especialmente a los presidentes de comunidad, de herramientas para **controlar el gasto descontrolado**, mejorar la **transparencia** y asegurar que el **trabajo profesional esté a la par del coste cobrado**.
+
+**Público Objetivo Principal:** Propietarios, vecinos y presidentes de Comunidades de Propietarios en régimen de Propiedad Horizontal.
+**Principio Fundamental:** La aplicación debe ser **independiente del administrador de fincas**. La comunidad debe contratarla directamente para garantizar la **continuidad tecnológica** y evitar la pérdida de acceso a datos si cambian de gestor.
+
+### II. Módulos Funcionales Clave del MVP
+
+El MVP se centrará en cuatro pilares: Conexión, Transparencia Documental, Gestión de Incidencias y el Sistema de *Rating* Verificable.
+
+#### 1. Módulo de Usuarios y Roles
+El sistema debe gestionar los siguientes roles con **gestión de permisos** diferenciada:
+
+| Rol | Responsabilidades y Acceso (Mínimo) |
+| :--- | :--- |
+| **Presidente/Junta** | Acceso total; capacidad para aprobar presupuestos, marcar incidencias como resueltas, y **autorizar la emisión de *ratings* de proveedores**. |
+| **Propietario/Vecino** | Acceso a gestión documental, tablón, foros, registro y **seguimiento del estado de la incidencia**. Posibilidad de solicitar presupuestos. |
+| **Proveedor/Profesional** | Directorio de servicios (fontaneros, electricistas, jardineros, etc.). Capacidad para recibir solicitudes de presupuesto y, crucialmente, emitir una **réplica documentada** a una calificación baja. |
+
+#### 2. Módulo de Conexión y Presupuestos (El Marketplace)
+Debe facilitar la conexión digital entre la Comunidad de Propietarios y los Proveedores.
+
+*   **Directorio de Proveedores:** Base de datos clasificada por categoría (ej. Fontanería, Electricidad, Albañilería).
+*   **Solicitud de Presupuestos:** Funcionalidad para que el presidente o un vecino designado solicite múltiples presupuestos para una tarea específica (ej., reparación de una avería).
+*   **Cuadro Comparativo Automático (USP Central):** Herramienta que facilite la comparación transparente de los presupuestos recibidos, centrada en el **coste vs. alcance del trabajo**.
+*   **Integración Contable:** Los presupuestos aprobados deben vincularse automáticamente al módulo de Contabilidad para garantizar el **control preciso de presupuestos**.
+
+#### 3. Módulo de Incidencias y Gestión Documental
+Debe garantizar la trazabilidad del trabajo realizado, esencial para la transparencia y la calificación.
+
+*   **Registro de Incidencias en Tiempo Real:** Los vecinos pueden reportar un problema con **pruebas visuales (fotos)** y detalles del problema.
+*   **Trazabilidad del Proceso:** **Seguimiento del estado de la incidencia** (Abierta, Presupuestada, Aprobada, En curso, Resuelta/Finalizada).
+*   **Transparencia Financiera:** Acceso directo a la **gestión documental completa** (actas, estatutos, facturas). Los propietarios deben poder consultar el **estado de las cuentas** o el **balance de cuentas** para combatir el gasto descontrolado.
+
+### III. Requisito Crítico: Sistema de *Rating* Verificable (Anti-Fraude)
+
+El sistema de puntuación para proveedores debe ir **más allá de una simple calificación de estrellas** y operar como un **expediente digital verificable**. Esto es indispensable para validar el trabajo profesional y el cumplimiento del coste.
+
+**Mecanismos de Validación y Trazabilidad Obligatorios:**
+
+1.  **Vínculo Contractual:** Una calificación solo puede emitirse si está ligada a un **servicio/incidencia real** que ha sido **gestionada y resuelta** a través de la plataforma.
+2.  **Autorización de Finalización:** El *rating* se desbloquea únicamente cuando la incidencia es marcada como "Resuelta" o "Finalizada" por un rol autorizado (Presidente/Junta).
+3.  **Verificación Económica:** El sistema debe cotejar que se haya registrado la **factura final** y que esta se vincule al **presupuesto aprobado**, permitiendo a la comunidad calificar el **cumplimiento del presupuesto** acordado.
+4.  **Calificación Detallada:** El sistema debe requerir que el emisor adjunte **pruebas visuales (si es posible)** y ofrezca **comentarios detallados** sobre la calidad del trabajo y la conducta profesional (la **ética del buen desempeño**).
+5.  **Derecho de Réplica:** El Proveedor debe tener un mecanismo para publicar una **réplica documentada** ante una calificación baja para contextualizar la situación.
+
+### IV. Requisitos Técnicos y Legales (Obligatorios)
+
+El *software* debe diseñarse desde el inicio con la máxima seguridad y cumplimiento normativo, dado que manejará datos sensibles de carácter personal.
+
+1.  **Cumplimiento Normativo (RGPD y LPH):**
+    *   **RGPD:** La plataforma debe **cumplir rigurosamente con la Ley de Protección de Datos (RGPD)**, aplicando medidas técnicas y organizativas apropiadas para garantizar la seguridad de los datos personales. Esto incluye la **gestión de permisos** estricta.
+    *   **LPH:** Las funcionalidades, especialmente las de documentación y votaciones, deben ser diseñadas conforme a la **Ley de Propiedad Horizontal**.
+
+2.  **Seguridad y Trazabilidad Digital:**
+    *   Implementar una **política de prevención y protección** contra **ciberriesgos** (dada la naturaleza sensible de los datos comunitarios).
+    *   Implementar un sistema de **gestión documental segura** e **histórico de comunicaciones con valor probatorio** que asegure la integridad y trazabilidad de los datos.
+
+3.  **Tecnología y Acceso:**
+    *   Desarrollo de una **APP móvil** (iOS y Android) y un **portal web** intuitivo para los propietarios.
+
+### V. Petición al Agente de IA
+
+El agente de IA desarrollador de software debe utilizar esta especificación para proponer:
+
+1.  Una arquitectura tecnológica robusta y escalable que garantice la **trazabilidad** de principio a fin (desde la solicitud de presupuesto hasta la calificación).
+2.  Una estrategia de seguridad que detalle cómo se cumplirán los requisitos del **RGPD** en la gestión de permisos y la custodia de datos.
+3.  Un *roadmap* de desarrollo del MVP, priorizando los módulos de **Conexión de Proveedores, Gestión de Incidencias con Trazabilidad, y el Sistema de *Rating* Verificable**.

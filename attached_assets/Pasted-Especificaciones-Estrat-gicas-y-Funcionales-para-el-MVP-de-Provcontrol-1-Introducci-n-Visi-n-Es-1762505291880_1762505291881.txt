@@ -1,0 +1,105 @@
+Especificaciones Estratégicas y Funcionales para el MVP de Provcontrol
+
+1. Introducción: Visión Estratégica y Propósito del Documento
+
+Este documento constituye la fuente de verdad definitiva para el desarrollo del Producto Mínimo Viable (MVP) de la aplicación vecinal. Su propósito es proporcionar una directiva clara y unívoca, respondiendo a las consultas clave del agente de IA de desarrollo y eliminando cualquier ambigüedad en el alcance y la ejecución del proyecto. La visión central del producto es crear una herramienta de control vecinal y transparencia, diseñada por y para el propietario. La ventaja diferencial que fundamenta su propuesta de valor reside en dos pilares innegociables: la independencia total respecto a los administradores de fincas y un sistema de rating de proveedores verificable basado en datos trazables. Las siguientes secciones detallan los pilares funcionales, técnicos y legales que materializan esta visión estratégica.
+
+
+--------------------------------------------------------------------------------
+
+
+2. Alcance Funcional del MVP: Un Ecosistema Interconectado
+
+Es imperativo concebir las funcionalidades del MVP no como elementos aislados, sino como un sistema interconectado y dependiente. Cada módulo es un pilar que sostiene la propuesta de valor central del producto. La omisión de cualquiera de estas funcionalidades comprometería directamente la capacidad de ofrecer un rating fiable y una trazabilidad completa, diluyendo así la ventaja competitiva fundamental de la aplicación.
+
+2.1. Funcionalidades Esenciales y su Priorización
+
+Las funcionalidades detalladas a continuación son ineludibles para el lanzamiento del MVP. Su implementación conjunta garantiza la integridad del sistema desde el primer día.
+
+Funcionalidad	Prioridad	Justificación Estratégica
+Sistema de usuarios y roles con permisos	ABSOLUTA	Es la base de la seguridad, el cumplimiento del RGPD y la estructura de gobernanza. Habilita el rol Presidente con la autoridad exclusiva para autorizar la emisión de ratings, previniendo el fraude y garantizando la validez de las valoraciones.
+Gestión de incidencias con fotos y trazabilidad	ABSOLUTA	Constituye el vínculo directo y probatorio entre un problema real, un servicio contratado y un resultado. Sin esta trazabilidad, que permite reportar y seguir el estado de un problema con evidencias fotográficas, el rating carecería de fundamento verificable.
+Sistema de rating verificable	ABSOLUTA	Es el USP (Unique Selling Proposition) del producto. Funciona como un expediente digital inmutable que conecta incidencias, presupuestos y facturas para generar una calificación fiable, combatiendo las opiniones sin fundamento y aportando verdadera transparencia al mercado.
+Directorio de proveedores	ALTA	Fundamenta el ecosistema de marketplace propuesto. Actúa como el repositorio centralizado donde los proveedores son clasificados y, posteriormente, calificados, permitiendo a las comunidades tomar decisiones informadas.
+Solicitud y comparación de presupuestos	ALTA	Ataca directamente el problema del gasto descontrolado. Su ventaja diferencial reside en que la tarea de crear cuadros comparativos no está totalmente integrada ni automatizada para gremios en las principales apps de gestión. Esta funcionalidad soluciona un punto de fricción manual y de alto valor, posicionándose como una herramienta de control financiero superior.
+
+2.2. Módulos Complementarios Cruciales
+
+Aunque se presentan como complementarios, los siguientes módulos son vitales desde la concepción del MVP para reforzar la transparencia financiera y fomentar un ecosistema comunitario robusto.
+
+1. Módulo Contable Simplificado: Se prescribe la implementación de un módulo contable simplificado, cuyo objetivo principal es el control vecinal y no la gestión interna del administrador. Debe permitir a cualquier propietario consultar el estado de las cuentas de forma sencilla. Su funcionalidad clave es la integración de facturas y el control de presupuestos, asegurando una correspondencia verificable entre el coste facturado y el servicio prestado, un dato esencial para la validez del sistema de rating.
+2. Foros y Tablón de Anuncios: Se dictamina su inclusión desde el lanzamiento inicial. Esta funcionalidad es crucial para la comunicación directa y la unión entre vecinos. Actualmente, los propietarios ya recurren activamente a foros externos como NuevosVecinos.com o plataformas generales como Reddit para buscar opiniones sobre profesionales. Integrar esta herramienta crea un espacio nativo y controlado que capitaliza un comportamiento de usuario existente, complementando la formalidad del rating verificable con el intercambio informal de recomendaciones.
+
+La correcta definición de estas funcionalidades exige una plataforma de ejecución que esté alineada con las necesidades y hábitos del usuario final, lo que nos conduce directamente a la estrategia de plataforma.
+
+
+--------------------------------------------------------------------------------
+
+
+3. Estrategia de Plataforma: Prioridad Móvil Absoluta (Mobile-First)
+
+La elección de la plataforma no es una decisión técnica secundaria, sino una elección estratégica fundamental. Dado que el público objetivo es el vecino y el presidente de la comunidad, la plataforma debe responder a sus necesidades de comodidad e inmediatez. La experiencia de usuario debe ser fluida, accesible y estar disponible en el dispositivo que utilizan en su día a día: el teléfono móvil.
+
+1. Comodidad y Acceso Directo: El acceso móvil satisface el deseo explícito del vecino de consultar información relevante sobre su comunidad sin depender de la intermediación de terceros, empoderándolo y fomentando la adopción.
+2. Gestión de Incidencias en Tiempo Real: Tareas centrales del MVP, como reportar una avería subiendo una foto al instante o seguir el estado de su resolución, son inherentemente móviles. Una plataforma móvil es el entorno natural para estas interacciones críticas.
+3. Inmediatez y Notificaciones: Las notificaciones push en tiempo real son un activo de valor incalculable para un rol como el del Presidente, quien dispone de tiempo limitado. Permiten una gestión ágil de alertas y aprobaciones, reduciendo la carga administrativa.
+4. Alineación con el Mercado: Los competidores más exitosos que, como esta aplicación, se centran en el vecino y son independientes del administrador (ej. TusVecinos), se han consolidado como aplicaciones móviles, validando este enfoque como el estándar del sector.
+
+3.1. Recomendación Directa para el MVP
+
+La directriz es inequívoca: la experiencia de usuario debe ser móvil desde su concepción.
+
+* Opción Prioritaria: Si los recursos y el cronograma lo permiten, se debe proceder con el desarrollo de una aplicación móvil nativa (iOS y Android) para ofrecer la mejor experiencia, rendimiento y capacidad de integración con las funciones del dispositivo.
+* Opción Alternativa: Si el presupuesto es ajustado, la alternativa viable es un Portal Web 100% responsive. Sin embargo, su diseño y arquitectura deben priorizar en todo momento la experiencia móvil (mobile-first), garantizando que todas las funcionalidades críticas sean tan intuitivas y eficientes en un smartphone como lo serían en una app nativa.
+
+Una experiencia de usuario excepcional debe estar sustentada por una arquitectura que garantice la seguridad de los datos y el cumplimiento de la normativa vigente.
+
+
+--------------------------------------------------------------------------------
+
+
+4. Arquitectura de Seguridad y Cumplimiento Normativo: Requisitos Innegociables
+
+La confianza del usuario y la viabilidad legal del producto dependen de forma crítica de la robustez de su arquitectura de seguridad y su estricto cumplimiento normativo. Áreas como el RGPD, la Ley de Propiedad Horizontal (LPH) y normativas fiscales como Verifactu no son opcionales, sino requisitos fundamentales que deben ser diseñados en el núcleo del sistema.
+
+4.1. Sistema de Autenticación y Gestión de Usuarios
+
+La directriz es implementar la solución más robusta posible: un sistema de Registro + Verificación + Invitaciones. Esta arquitectura es un requisito legal y funcional indispensable para garantizar el control vecinal, la validez del rating y la prevención del fraude.
+
+1. Registro con Email/Contraseña y Sistema de Roles: Es necesario un sistema de gestión de permisos estricto que defina claramente los roles (ej. Presidente, Propietario). Únicamente el Presidente o la Junta de Gobierno tendrán la autoridad para autorizar la emisión de ratings sobre proveedores, asegurando que cada valoración provenga de una decisión comunitaria legítima.
+2. Verificación de Identidad: Se debe implementar un mecanismo que vincule fehacientemente a cada usuario registrado con una propiedad específica. Este paso es crucial no solo para asegurar que solo los propietarios legítimos puedan calificar servicios, sino para habilitar funciones de gobernanza comunitaria. Por ejemplo, permite denegar el acceso a instalaciones cuyo uso no sea vital (como la piscina) a un vecino que no esté al corriente de pago, transformando la verificación de un requisito de seguridad a una herramienta de gestión esencial.
+3. Sistema de Invitaciones para Comunidades: El alta de nuevas comunidades y sus miembros se gestionará a través de un sistema de invitaciones. Este método es el más seguro para garantizar un entorno controlado, reforzar el control vecinal desde el inicio y asegurar el cumplimiento del RGPD en el tratamiento de datos personales.
+
+4.2. Almacenamiento de Documentos
+
+La solución tecnológica para el almacenamiento de documentos (actas, presupuestos, facturas, fotos) debe garantizar de forma obligatoria cuatro principios: trazabilidad, seguridad, inmutabilidad y cumplimiento riguroso de la normativa.
+
+1. Cumplimiento del RGPD y Protección contra Ciberriesgos: El sistema debe implementar medidas técnicas y organizativas avanzadas para proteger los datos personales. Esto incluye, de forma no negociable, copias de seguridad automáticas y sistemas de protección proactiva contra ciberataques.
+2. Trazabilidad y Valor Probatorio: Todos los documentos y comunicaciones almacenados deben ser inmutables. El histórico de interacciones (incidencias, aprobaciones, mensajes) debe tener valor probatorio para respaldar la veracidad del sistema de rating y servir como evidencia en caso de disputas.
+3. Integración Contable y Fiscal: El sistema debe garantizar la integridad de los datos de todas las transacciones económicas reflejadas en las facturas. La arquitectura debe estar preparada para cumplir con normativas como Verifactu, asegurando la trazabilidad y la inalterabilidad de los registros financieros.
+
+Estos estrictos requisitos de seguridad y legalidad se ven reforzados por la decisión estratégica de mantener el sistema completamente autónomo.
+
+
+--------------------------------------------------------------------------------
+
+
+5. Requisito Clave de Arquitectura: Independencia Total del Sistema
+
+La independencia total del sistema respecto a cualquier software de administración de fincas no es una simple elección técnica, sino una decisión estratégica fundamental que constituye una de las mayores ventajas competitivas del producto.
+
+1. Independencia y Continuidad: Al ser una solución contratada directamente por la comunidad de propietarios, se elimina el principal punto de fricción del mercado actual: la pérdida de acceso a la aplicación y a todo el historial de datos cuando se cambia de administrador. El control y la propiedad de la información permanecen siempre en manos de la comunidad.
+2. Control Vecinal: La independencia es la máxima expresión del control vecinal. Capitaliza el deseo de los propietarios de tener acceso directo a la información relevante sobre su comunidad y sus proveedores, sin filtros ni intermediarios.
+3. Cumplimiento Normativo Autónomo: Un sistema autónomo garantiza un control absoluto sobre la trazabilidad y la custodia documental digital. Esto permite asegurar el cumplimiento de la Ley de Propiedad Horizontal y el RGPD de manera directa y verificable, sin depender de las políticas de terceros.
+
+Aunque el MVP debe operar de forma completamente independiente, esta arquitectura no impide que, una vez consolidado el producto, se puedan explorar integraciones parciales con otros sistemas para funcionalidades específicas, como la importación de datos.
+
+
+--------------------------------------------------------------------------------
+
+
+6. Conclusión y Siguientes Pasos
+
+Este documento establece las directivas estratégicas inamovibles para el desarrollo del MVP. El enfoque debe ser absoluto en el control vecinal, materializado a través de un sistema de rating verificable, accesible mediante una experiencia de usuario prioritariamente móvil y soportado por una arquitectura segura, legalmente conforme e independiente.
+
+Se instruye al agente de IA para que proceda con el diseño de la arquitectura técnica detallada y la planificación de los sprints de desarrollo basándose estricta y exclusivamente en las especificaciones aquí definidas. Este documento es la referencia única y autoritativa para la ejecución del proyecto.
