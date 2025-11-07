@@ -701,6 +701,171 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/ratings/provider/:providerId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user || !user.communityId) {
+        return res.status(403).json({ message: "User not part of a community" });
+      }
+
+      const provider = await storage.getProvider(req.params.providerId);
+      if (!provider) {
+        return res.status(404).json({ message: "Provider not found" });
+      }
+
+      const ratings = await storage.getRatings(req.params.providerId);
+      const communityRatings = ratings.filter(r => r.communityId === user.communityId);
+      
+      res.json(communityRatings);
+    } catch (error) {
+      console.error("Error fetching ratings:", error);
+      res.status(500).json({ message: "Failed to fetch ratings" });
+    }
+  });
+
+  app.get("/api/ratings/stats/:providerId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user || !user.communityId) {
+        return res.status(403).json({ message: "User not part of a community" });
+      }
+
+      const provider = await storage.getProvider(req.params.providerId);
+      if (!provider) {
+        return res.status(404).json({ message: "Provider not found" });
+      }
+
+      const ratings = await storage.getRatings(req.params.providerId);
+      const communityRatings = ratings.filter(r => r.communityId === user.communityId);
+
+      if (communityRatings.length === 0) {
+        return res.json({
+          averageOverall: 0,
+          averageQuality: 0,
+          averageTimeliness: 0,
+          averageBudgetAdherence: 0,
+          totalRatings: 0,
+        });
+      }
+
+      const totalOverall = communityRatings.reduce((sum, r) => sum + r.overallRating, 0);
+      const totalQuality = communityRatings.reduce((sum, r) => sum + r.qualityRating, 0);
+      const totalTimeliness = communityRatings.reduce((sum, r) => sum + r.timelinessRating, 0);
+      const totalBudget = communityRatings.reduce((sum, r) => sum + r.budgetAdherenceRating, 0);
+
+      res.json({
+        averageOverall: Math.round((totalOverall / communityRatings.length) * 10) / 10,
+        averageQuality: Math.round((totalQuality / communityRatings.length) * 10) / 10,
+        averageTimeliness: Math.round((totalTimeliness / communityRatings.length) * 10) / 10,
+        averageBudgetAdherence: Math.round((totalBudget / communityRatings.length) * 10) / 10,
+        totalRatings: communityRatings.length,
+      });
+    } catch (error) {
+      console.error("Error fetching rating stats:", error);
+      res.status(500).json({ message: "Failed to fetch rating stats" });
+    }
+  });
+
+  app.post("/api/ratings", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user || !user.communityId) {
+        return res.status(403).json({ message: "User not part of a community" });
+      }
+
+      const validationResult = insertRatingSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({
+          message: "Invalid rating data",
+          errors: validationResult.error.errors,
+        });
+      }
+
+      const incident = await storage.getIncident(validationResult.data.incidentId);
+      if (!incident) {
+        return res.status(404).json({ message: "Incident not found" });
+      }
+
+      if (incident.status !== 'resuelta') {
+        return res.status(400).json({ message: "Can only rate resolved incidents" });
+      }
+
+      if (incident.communityId !== user.communityId) {
+        return res.status(403).json({ message: "Incident not from your community" });
+      }
+
+      const budget = await storage.getBudget(validationResult.data.budgetId);
+      if (!budget || !budget.isApproved) {
+        return res.status(400).json({ message: "Budget must be approved" });
+      }
+
+      if (budget.incidentId !== validationResult.data.incidentId) {
+        return res.status(400).json({ message: "Budget does not match incident" });
+      }
+
+      if (budget.providerId !== validationResult.data.providerId) {
+        return res.status(400).json({ message: "Provider does not match budget" });
+      }
+
+      const president = await storage.getUser(validationResult.data.authorizedByPresidentId);
+      if (!president || president.role !== 'presidente' || president.communityId !== user.communityId) {
+        return res.status(400).json({ message: "Must be authorized by community president" });
+      }
+
+      const rating = await storage.createRating({
+        ...validationResult.data,
+        ratedById: userId,
+        communityId: user.communityId,
+      });
+
+      res.status(201).json(rating);
+    } catch (error: any) {
+      console.error("Error creating rating:", error);
+      if (error.code === '23505') {
+        return res.status(400).json({ message: "Rating already exists for this incident" });
+      }
+      res.status(500).json({ message: "Failed to create rating" });
+    }
+  });
+
+  app.post("/api/ratings/:id/reply", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== 'proveedor') {
+        return res.status(403).json({ message: "Only providers can reply to ratings" });
+      }
+
+      const provider = await storage.getProviderByUserId(userId);
+      if (!provider) {
+        return res.status(404).json({ message: "Provider not found" });
+      }
+
+      const { reply } = req.body;
+      if (!reply || typeof reply !== 'string' || reply.trim().length === 0) {
+        return res.status(400).json({ message: "Reply text is required" });
+      }
+
+      const rating = await storage.addProviderReply(req.params.id, provider.id, reply);
+      
+      if (!rating) {
+        return res.status(403).json({ message: "Rating not found or unauthorized" });
+      }
+
+      res.json(rating);
+    } catch (error) {
+      console.error("Error adding provider reply:", error);
+      res.status(500).json({ message: "Failed to add provider reply" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
