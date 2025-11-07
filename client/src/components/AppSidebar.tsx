@@ -6,6 +6,7 @@ import {
   MessageSquare,
   Settings,
   BarChart3,
+  UserPlus,
 } from "lucide-react";
 import {
   Sidebar,
@@ -55,6 +56,12 @@ const menuItems = [
     url: "/documentos",
     icon: FileText,
     roles: ["presidente", "propietario"],
+  },
+  {
+    title: "Invitaciones",
+    url: "/invitaciones",
+    icon: UserPlus,
+    roles: ["presidente"],
   },
   {
     title: "Foro Comunidad",

@@ -12,6 +12,7 @@ import {
   insertForumPostSchema,
   insertForumReplySchema,
   insertIncidentUpdateSchema,
+  insertCommunityInvitationSchema,
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -430,6 +431,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting upload URL:", error);
       res.status(500).json({ message: "Failed to get upload URL" });
+    }
+  });
+
+  app.get("/api/invitations/:communityId", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user || user.role !== "presidente") {
+        return res.status(403).json({ message: "Only presidents can view invitations" });
+      }
+      const invitations = await storage.getInvitations(req.params.communityId);
+      res.json(invitations);
+    } catch (error) {
+      console.error("Error fetching invitations:", error);
+      res.status(500).json({ message: "Failed to fetch invitations" });
+    }
+  });
+
+  app.post("/api/invitations", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user || user.role !== "presidente") {
+        return res.status(403).json({ message: "Only presidents can create invitations" });
+      }
+
+      const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+
+      const invitationData = {
+        ...req.body,
+        invitedBy: user.id,
+        invitationCode: code,
+        expiresAt,
+      };
+
+      const result = insertCommunityInvitationSchema.safeParse(invitationData);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid data", errors: result.error });
+      }
+
+      const invitation = await storage.createInvitation(result.data);
+      res.status(201).json(invitation);
+    } catch (error) {
+      console.error("Error creating invitation:", error);
+      res.status(500).json({ message: "Failed to create invitation" });
+    }
+  });
+
+  app.get("/api/invitations/verify/:code", async (req, res) => {
+    try {
+      const invitation = await storage.getInvitationByCode(req.params.code);
+      if (!invitation) {
+        return res.status(404).json({ message: "Invalid or expired invitation code" });
+      }
+      res.json(invitation);
+    } catch (error) {
+      console.error("Error verifying invitation:", error);
+      res.status(500).json({ message: "Failed to verify invitation" });
+    }
+  });
+
+  app.post("/api/invitations/accept/:code", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const invitation = await storage.acceptInvitation(req.params.code, userId);
+      
+      if (!invitation) {
+        return res.status(404).json({ message: "Invalid or expired invitation code" });
+      }
+
+      await storage.upsertUser({
+        id: userId,
+        communityId: invitation.communityId,
+        role: invitation.role,
+        propertyUnit: invitation.propertyUnit || undefined,
+      });
+
+      res.json({ message: "Invitation accepted successfully", invitation });
+    } catch (error) {
+      console.error("Error accepting invitation:", error);
+      res.status(500).json({ message: "Failed to accept invitation" });
+    }
+  });
+
+  app.delete("/api/invitations/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user || user.role !== "presidente") {
+        return res.status(403).json({ message: "Only presidents can cancel invitations" });
+      }
+      
+      await storage.cancelInvitation(req.params.id);
+      res.json({ message: "Invitation cancelled successfully" });
+    } catch (error) {
+      console.error("Error cancelling invitation:", error);
+      res.status(500).json({ message: "Failed to cancel invitation" });
     }
   });
 

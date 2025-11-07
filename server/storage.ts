@@ -1,4 +1,4 @@
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, gt } from "drizzle-orm";
 import { db } from "./db";
 import {
   users,
@@ -11,6 +11,7 @@ import {
   forumPosts,
   forumReplies,
   incidentUpdates,
+  communityInvitations,
   type User,
   type UpsertUser,
   type Community,
@@ -31,6 +32,8 @@ import {
   type InsertForumReply,
   type IncidentUpdate,
   type InsertIncidentUpdate,
+  type CommunityInvitation,
+  type InsertCommunityInvitation,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -74,6 +77,12 @@ export interface IStorage {
   
   getIncidentUpdates(incidentId: string): Promise<IncidentUpdate[]>;
   createIncidentUpdate(update: InsertIncidentUpdate): Promise<IncidentUpdate>;
+  
+  getInvitations(communityId: string): Promise<CommunityInvitation[]>;
+  getInvitationByCode(code: string): Promise<CommunityInvitation | undefined>;
+  createInvitation(invitation: InsertCommunityInvitation): Promise<CommunityInvitation>;
+  acceptInvitation(code: string, userId: string): Promise<CommunityInvitation | undefined>;
+  cancelInvitation(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -294,6 +303,62 @@ export class DatabaseStorage implements IStorage {
   async createIncidentUpdate(updateData: InsertIncidentUpdate): Promise<IncidentUpdate> {
     const [update] = await db.insert(incidentUpdates).values(updateData).returning();
     return update;
+  }
+
+  async getInvitations(communityId: string): Promise<CommunityInvitation[]> {
+    return await db
+      .select()
+      .from(communityInvitations)
+      .where(eq(communityInvitations.communityId, communityId))
+      .orderBy(desc(communityInvitations.createdAt));
+  }
+
+  async getInvitationByCode(code: string): Promise<CommunityInvitation | undefined> {
+    const [invitation] = await db
+      .select()
+      .from(communityInvitations)
+      .where(
+        and(
+          eq(communityInvitations.invitationCode, code),
+          eq(communityInvitations.status, "pendiente"),
+          gt(communityInvitations.expiresAt, new Date())
+        )
+      );
+    return invitation;
+  }
+
+  async createInvitation(invitationData: InsertCommunityInvitation): Promise<CommunityInvitation> {
+    const [invitation] = await db
+      .insert(communityInvitations)
+      .values(invitationData)
+      .returning();
+    return invitation;
+  }
+
+  async acceptInvitation(code: string, userId: string): Promise<CommunityInvitation | undefined> {
+    const [invitation] = await db
+      .update(communityInvitations)
+      .set({
+        status: "aceptada",
+        acceptedAt: new Date(),
+        acceptedById: userId,
+      })
+      .where(
+        and(
+          eq(communityInvitations.invitationCode, code),
+          eq(communityInvitations.status, "pendiente"),
+          gt(communityInvitations.expiresAt, new Date())
+        )
+      )
+      .returning();
+    return invitation;
+  }
+
+  async cancelInvitation(id: string): Promise<void> {
+    await db
+      .update(communityInvitations)
+      .set({ status: "cancelada" })
+      .where(eq(communityInvitations.id, id));
   }
 }
 

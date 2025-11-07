@@ -28,6 +28,7 @@ export const sessions = pgTable(
 // Enums
 export const userRoleEnum = pgEnum("user_role", ["presidente", "propietario", "proveedor"]);
 export const incidentStatusEnum = pgEnum("incident_status", ["abierta", "presupuestada", "aprobada", "en_curso", "resuelta"]);
+export const invitationStatusEnum = pgEnum("invitation_status", ["pendiente", "aceptada", "expirada", "cancelada"]);
 export const providerCategoryEnum = pgEnum("provider_category", [
   "fontaneria",
   "electricidad",
@@ -280,6 +281,32 @@ export const insertIncidentUpdateSchema = createInsertSchema(incidentUpdates).om
 });
 export type IncidentUpdate = typeof incidentUpdates.$inferSelect;
 export type InsertIncidentUpdate = z.infer<typeof insertIncidentUpdateSchema>;
+
+// Community Invitations table - Sistema de invitaciones
+export const communityInvitations = pgTable("community_invitations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  communityId: varchar("community_id").notNull().references(() => communities.id),
+  invitedBy: varchar("invited_by").notNull().references(() => users.id),
+  email: varchar("email").notNull(),
+  role: userRoleEnum("role").notNull().default("propietario"),
+  propertyUnit: varchar("property_unit"),
+  invitationCode: varchar("invitation_code", { length: 8 }).notNull().unique(),
+  status: invitationStatusEnum("status").notNull().default("pendiente"),
+  expiresAt: timestamp("expires_at").notNull(),
+  acceptedAt: timestamp("accepted_at"),
+  acceptedById: varchar("accepted_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertCommunityInvitationSchema = createInsertSchema(communityInvitations).omit({
+  id: true,
+  status: true,
+  acceptedAt: true,
+  acceptedById: true,
+  createdAt: true,
+});
+export type CommunityInvitation = typeof communityInvitations.$inferSelect;
+export type InsertCommunityInvitation = z.infer<typeof insertCommunityInvitationSchema>;
 
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
