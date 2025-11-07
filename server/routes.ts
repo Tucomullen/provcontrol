@@ -13,6 +13,7 @@ import {
   insertForumReplySchema,
   insertIncidentUpdateSchema,
   insertCommunityInvitationSchema,
+  insertTransactionSchema,
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -527,6 +528,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error cancelling invitation:", error);
       res.status(500).json({ message: "Failed to cancel invitation" });
+    }
+  });
+
+  app.get("/api/transactions", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user?.communityId) {
+        return res.status(403).json({ message: "User must belong to a community" });
+      }
+      
+      const ownerId = req.query.ownerId;
+      const transactions = await storage.getTransactions(user.communityId, ownerId);
+      res.json(transactions);
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      res.status(500).json({ message: "Failed to fetch transactions" });
+    }
+  });
+
+  app.get("/api/transactions/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user?.communityId) {
+        return res.status(403).json({ message: "User must belong to a community" });
+      }
+
+      const transaction = await storage.getTransaction(req.params.id);
+      if (!transaction) {
+        return res.status(404).json({ message: "Transaction not found" });
+      }
+
+      if (transaction.communityId !== user.communityId) {
+        return res.status(403).json({ message: "Unauthorized access to transaction" });
+      }
+
+      res.json(transaction);
+    } catch (error) {
+      console.error("Error fetching transaction:", error);
+      res.status(500).json({ message: "Failed to fetch transaction" });
+    }
+  });
+
+  app.post("/api/transactions", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user || user.role !== "presidente" || !user.communityId) {
+        return res.status(403).json({ message: "Only presidents can create transactions" });
+      }
+
+      const result = insertTransactionSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid data", errors: result.error });
+      }
+      
+      const transactionData = {
+        ...result.data,
+        communityId: user.communityId,
+        createdById: user.id,
+      };
+      
+      const transaction = await storage.createTransaction(transactionData);
+      res.status(201).json(transaction);
+    } catch (error) {
+      console.error("Error creating transaction:", error);
+      res.status(500).json({ message: "Failed to create transaction" });
+    }
+  });
+
+  app.patch("/api/transactions/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user || user.role !== "presidente" || !user.communityId) {
+        return res.status(403).json({ message: "Only presidents can update transactions" });
+      }
+
+      const existingTransaction = await storage.getTransaction(req.params.id);
+      if (!existingTransaction) {
+        return res.status(404).json({ message: "Transaction not found" });
+      }
+
+      if (existingTransaction.communityId !== user.communityId) {
+        return res.status(403).json({ message: "Unauthorized access to transaction" });
+      }
+
+      const result = insertTransactionSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid data", errors: result.error });
+      }
+
+      const { communityId, createdById, ...allowedUpdates } = result.data;
+      const transaction = await storage.updateTransaction(req.params.id, allowedUpdates);
+      res.json(transaction);
+    } catch (error) {
+      console.error("Error updating transaction:", error);
+      res.status(500).json({ message: "Failed to update transaction" });
+    }
+  });
+
+  app.delete("/api/transactions/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user || user.role !== "presidente" || !user.communityId) {
+        return res.status(403).json({ message: "Only presidents can delete transactions" });
+      }
+
+      const existingTransaction = await storage.getTransaction(req.params.id);
+      if (!existingTransaction) {
+        return res.status(404).json({ message: "Transaction not found" });
+      }
+
+      if (existingTransaction.communityId !== user.communityId) {
+        return res.status(403).json({ message: "Unauthorized access to transaction" });
+      }
+      
+      await storage.deleteTransaction(req.params.id);
+      res.json({ message: "Transaction deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting transaction:", error);
+      res.status(500).json({ message: "Failed to delete transaction" });
     }
   });
 

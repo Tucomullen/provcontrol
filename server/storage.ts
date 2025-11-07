@@ -12,6 +12,7 @@ import {
   forumReplies,
   incidentUpdates,
   communityInvitations,
+  transactions,
   type User,
   type UpsertUser,
   type Community,
@@ -34,6 +35,8 @@ import {
   type InsertIncidentUpdate,
   type CommunityInvitation,
   type InsertCommunityInvitation,
+  type Transaction,
+  type InsertTransaction,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -83,6 +86,12 @@ export interface IStorage {
   createInvitation(invitation: InsertCommunityInvitation): Promise<CommunityInvitation>;
   acceptInvitation(code: string, userId: string): Promise<CommunityInvitation | undefined>;
   cancelInvitation(id: string): Promise<void>;
+  
+  getTransactions(communityId?: string, ownerId?: string): Promise<Transaction[]>;
+  getTransaction(id: string): Promise<Transaction | undefined>;
+  createTransaction(transaction: InsertTransaction): Promise<Transaction>;
+  updateTransaction(id: string, transaction: Partial<InsertTransaction>): Promise<Transaction | undefined>;
+  deleteTransaction(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -359,6 +368,48 @@ export class DatabaseStorage implements IStorage {
       .update(communityInvitations)
       .set({ status: "cancelada" })
       .where(eq(communityInvitations.id, id));
+  }
+
+  async getTransactions(communityId?: string, ownerId?: string): Promise<Transaction[]> {
+    let query = db.select().from(transactions).orderBy(desc(transactions.transactionDate));
+    
+    if (communityId && ownerId) {
+      return await query.where(
+        and(
+          eq(transactions.communityId, communityId),
+          eq(transactions.ownerId, ownerId)
+        )
+      );
+    } else if (communityId) {
+      return await query.where(eq(transactions.communityId, communityId));
+    } else if (ownerId) {
+      return await query.where(eq(transactions.ownerId, ownerId));
+    }
+    
+    return await query;
+  }
+
+  async getTransaction(id: string): Promise<Transaction | undefined> {
+    const [transaction] = await db.select().from(transactions).where(eq(transactions.id, id));
+    return transaction;
+  }
+
+  async createTransaction(transactionData: InsertTransaction): Promise<Transaction> {
+    const [transaction] = await db.insert(transactions).values(transactionData).returning();
+    return transaction;
+  }
+
+  async updateTransaction(id: string, transactionData: Partial<InsertTransaction>): Promise<Transaction | undefined> {
+    const [transaction] = await db
+      .update(transactions)
+      .set({ ...transactionData, updatedAt: new Date() })
+      .where(eq(transactions.id, id))
+      .returning();
+    return transaction;
+  }
+
+  async deleteTransaction(id: string): Promise<void> {
+    await db.delete(transactions).where(eq(transactions.id, id));
   }
 }
 

@@ -17,6 +17,7 @@ import Forum from "@/pages/Forum";
 import Budgets from "@/pages/Budgets";
 import Settings from "@/pages/Settings";
 import Invitations from "@/pages/Invitations";
+import Accounting from "@/pages/Accounting";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -36,6 +37,7 @@ function Router() {
       <Route path="/incidencias" component={Incidents} />
       <Route path="/proveedores" component={Providers} />
       <Route path="/presupuestos" component={Budgets} />
+      <Route path="/contabilidad" component={Accounting} />
       <Route path="/documentos" component={Documents} />
       <Route path="/foro" component={Forum} />
       <Route path="/invitaciones" component={Invitations} />

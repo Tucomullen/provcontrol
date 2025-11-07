@@ -29,6 +29,18 @@ export const sessions = pgTable(
 export const userRoleEnum = pgEnum("user_role", ["presidente", "propietario", "proveedor"]);
 export const incidentStatusEnum = pgEnum("incident_status", ["abierta", "presupuestada", "aprobada", "en_curso", "resuelta"]);
 export const invitationStatusEnum = pgEnum("invitation_status", ["pendiente", "aceptada", "expirada", "cancelada"]);
+export const transactionTypeEnum = pgEnum("transaction_type", ["gasto", "ingreso"]);
+export const transactionCategoryEnum = pgEnum("transaction_category", [
+  "mantenimiento",
+  "reparacion",
+  "suministros",
+  "limpieza",
+  "administracion",
+  "seguro",
+  "cuota_mensual",
+  "derrama",
+  "otro"
+]);
 export const providerCategoryEnum = pgEnum("provider_category", [
   "fontaneria",
   "electricidad",
@@ -308,6 +320,34 @@ export const insertCommunityInvitationSchema = createInsertSchema(communityInvit
 export type CommunityInvitation = typeof communityInvitations.$inferSelect;
 export type InsertCommunityInvitation = z.infer<typeof insertCommunityInvitationSchema>;
 
+// Transactions table - Sistema contable
+export const transactions = pgTable("transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  communityId: varchar("community_id").notNull().references(() => communities.id, { onDelete: "cascade" }),
+  type: transactionTypeEnum("type").notNull(),
+  category: transactionCategoryEnum("category").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  description: text("description").notNull(),
+  transactionDate: timestamp("transaction_date").notNull().defaultNow(),
+  budgetId: varchar("budget_id").references(() => budgets.id),
+  incidentId: varchar("incident_id").references(() => incidents.id),
+  ownerId: varchar("owner_id").references(() => users.id),
+  invoiceUrl: varchar("invoice_url"),
+  receiptUrl: varchar("receipt_url"),
+  notes: text("notes"),
+  createdById: varchar("created_by_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertTransactionSchema = createInsertSchema(transactions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type Transaction = typeof transactions.$inferSelect;
+export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   community: one(communities, {
@@ -324,6 +364,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   documents: many(documents),
   forumPosts: many(forumPosts),
   forumReplies: many(forumReplies),
+  transactions: many(transactions),
 }));
 
 export const communitiesRelations = relations(communities, ({ one, many }) => ({
@@ -336,6 +377,7 @@ export const communitiesRelations = relations(communities, ({ one, many }) => ({
   providers: many(providers),
   documents: many(documents),
   forumPosts: many(forumPosts),
+  transactions: many(transactions),
 }));
 
 export const providersRelations = relations(providers, ({ one, many }) => ({
@@ -443,6 +485,29 @@ export const incidentUpdatesRelations = relations(incidentUpdates, ({ one }) => 
   }),
   updatedBy: one(users, {
     fields: [incidentUpdates.updatedById],
+    references: [users.id],
+  }),
+}));
+
+export const transactionsRelations = relations(transactions, ({ one }) => ({
+  community: one(communities, {
+    fields: [transactions.communityId],
+    references: [communities.id],
+  }),
+  budget: one(budgets, {
+    fields: [transactions.budgetId],
+    references: [budgets.id],
+  }),
+  incident: one(incidents, {
+    fields: [transactions.incidentId],
+    references: [incidents.id],
+  }),
+  owner: one(users, {
+    fields: [transactions.ownerId],
+    references: [users.id],
+  }),
+  createdBy: one(users, {
+    fields: [transactions.createdById],
     references: [users.id],
   }),
 }));

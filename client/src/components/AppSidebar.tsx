@@ -7,6 +7,7 @@ import {
   Settings,
   BarChart3,
   UserPlus,
+  Wallet,
 } from "lucide-react";
 import {
   Sidebar,
@@ -50,6 +51,12 @@ const menuItems = [
     url: "/presupuestos",
     icon: BarChart3,
     roles: ["presidente", "proveedor"],
+  },
+  {
+    title: "Contabilidad",
+    url: "/contabilidad",
+    icon: Wallet,
+    roles: ["presidente"],
   },
   {
     title: "Documentos",
