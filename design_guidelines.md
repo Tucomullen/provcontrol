@@ -1,253 +1,210 @@
-# Design Guidelines for Provcontrol MVP
+# Provcontrol Design Guidelines - Compact Edition
 
-## Design Approach
+## Core Design Principles
+**Framework**: Hybrid social platform (LinkedIn professionalism + Airbnb trust + Instagram engagement) for property management communities.
 
-**Selected Framework**: Material Design principles adapted for mobile-first property management
-**Justification**: Provcontrol requires a trustworthy, data-dense interface that prioritizes functionality while remaining approachable for non-technical property owners. Material Design provides excellent patterns for complex information hierarchies, forms, and status tracking.
-
-**Key Design Principles**:
-1. **Transparency First**: Visual clarity in data presentation, budget comparisons, and verification states
-2. **Mobile-Optimized**: Touch-friendly targets, thumb-zone navigation, collapsible sections
-3. **Role-Aware Interface**: Clear visual differentiation between President, Owner, and Provider views
-4. **Trust & Credibility**: Professional aesthetic emphasizing security and verified information
-
----
-
-## Typography System
-
-**Font Stack**: 
-- Primary: Inter or System UI (-apple-system, BlinkMacSystemFont)
-- Headings: 600-700 weight
-- Body: 400 weight
-- UI Elements: 500 weight
-
-**Type Scale**:
-- Hero/Page Titles: text-3xl to text-4xl (mobile), text-4xl to text-5xl (desktop)
-- Section Headings: text-xl to text-2xl
-- Card Titles: text-lg font-semibold
-- Body Text: text-base (16px minimum for mobile readability)
-- Meta/Status: text-sm
-- Microcopy: text-xs
+**Pillars**:
+1. **Vibrant Energy**: Bold visuals conveying community vitality
+2. **Social-First**: Timeline feeds, activity streams, interaction-focused
+3. **Visual Verification**: Prominent badges, trust indicators, transparent ratings
+4. **Spacious Layout**: Generous whitespace emphasizing key content
+5. **Mobile-Optimized**: Thumb-zone navigation, swipe gestures, bottom sheets
 
 ---
 
-## Layout System
+## Typography
 
-**Spacing Primitives**: Use Tailwind units of **2, 4, 6, 8, 12, 16**
-- Component padding: p-4 to p-6 (mobile), p-6 to p-8 (desktop)
-- Card spacing: space-y-4 within cards
-- Section margins: mb-8 to mb-12
-- Grid gaps: gap-4 to gap-6
+**Font**: Inter or DM Sans
 
-**Container Strategy**:
-- Max-width: max-w-7xl for dashboards
-- Max-width: max-w-2xl for forms and focused content
-- Full-width: Data tables and comparison views
-- Mobile: px-4, Desktop: px-6 to px-8
+**Scale**:
+- Hero: `text-5xl/text-6xl font-bold tracking-tight` (desktop), `text-4xl` (mobile)
+- Sections: `text-3xl/text-4xl font-bold`
+- Card Headlines: `text-2xl font-semibold`
+- Subheadings: `text-xl font-semibold`
+- Body: `text-base/text-lg`
+- Meta: `text-sm font-medium`
+- Captions: `text-xs uppercase tracking-wide`
 
-**Grid System**:
-- Mobile: Single column (grid-cols-1)
-- Tablet: 2 columns for cards (md:grid-cols-2)
-- Desktop: 3-4 columns for provider directory, incident cards (lg:grid-cols-3, xl:grid-cols-4)
-- Budget comparison tables: Horizontal scroll on mobile, full-width comparison on desktop
+**Weights**: Bold (700) headlines, Semibold (600) emphasis, Medium (500) UI, Regular (400) body.
 
 ---
 
-## Component Library
+## Layout & Spacing
 
-### Navigation
-**Primary Navigation** (Mobile-First):
-- Bottom navigation bar (fixed) with 4-5 core sections: Dashboard, Incidents, Providers, Documents, Community
-- Top app bar: Logo, community name, user avatar/role indicator, notifications bell
-- Desktop: Side navigation (expanded) with same sections, collapsible on tablet
+**Spacing Units**: `4, 6, 8, 12, 16, 20, 24`
 
-**Role Indicator**: Prominent badge in header showing "Presidente", "Propietario", or "Proveedor"
+**Containers**:
+- Feed/Timeline: `max-w-3xl` (centered)
+- Dashboard: `max-w-7xl`
+- Forms: `max-w-2xl`
+- Hero: Full-width with inner `max-w-7xl`
+- Padding: `px-4/px-6` mobile, `px-8/px-12` desktop
 
-### Dashboard Cards
-- Elevated cards with subtle shadow (shadow-sm to shadow-md)
-- Rounded corners: rounded-lg
-- Status indicators: Dot badges (inline-flex items-center) with status text
-- Action buttons: Bottom-right or bottom-full-width on mobile
+**Grids**:
+- Provider cards: `grid-cols-1 md:grid-cols-2 lg:grid-cols-3`
+- Stats: `grid-cols-2 md:grid-cols-4`
+- Feed: Single column `max-w-3xl`
 
-### Incident Management
-**Incident Card**:
-- Thumbnail image (square, rounded) showing incident photo
-- Status badge (top-right): "Abierta", "Presupuestada", "En Curso", "Resuelta"
-- Timeline component showing progression through states
-- Expandable accordion for full details and photo gallery
+---
 
-**Incident Detail View**:
-- Hero image section with incident photos (swipeable gallery on mobile)
-- Status timeline (vertical on mobile, horizontal on desktop)
-- Attached documents list with file type icons
-- Comment/update thread
-- Action buttons (sticky footer on mobile)
+## Navigation
 
-### Provider Directory
-**Provider Card**:
-- Profile image or logo (rounded-full, size-16 to size-20)
-- Category badge (e.g., "Fontanería", "Electricidad")
-- Star rating with verification badge
-- Key stats: # of jobs, avg response time
-- "Solicitar Presupuesto" button
+**Top Bar** (Desktop):
+- Left: Logo wordmark
+- Center: Prominent search bar
+- Right: Notifications (badge), Messages, Avatar dropdown
 
-**Provider Profile**:
-- Header with profile image, name, categories, overall rating
-- Verified badge prominently displayed
-- Stats grid: Completed jobs, response time, rating breakdown
-- Reviews section with linked incidents (showing verification chain)
-- Right of reply section for contested reviews
+**Mobile**: 
+- Hamburger + search icon top
+- Bottom tabs (h-16): Home, Incidents, Providers, Community, Profile
+- Active: Filled icon + label
 
-### Budget Comparison System
-**Comparison Table** (Critical USP):
-- Sticky header row with provider names/logos
-- Left column: Line items (description of work)
-- Grid cells: Prices with visual indicators (lowest highlighted)
-- Bottom row: Total with visual comparison bars
-- Mobile: Horizontal scroll with first column (items) sticky
-- Desktop: Full-width table with fixed layout
+**Sidebar** (Desktop):
+- `w-64`, sections: Dashboard, My Community, Incidents, Providers, Documents, Forum, Settings
+- Active: Background highlight, bold, left border accent
 
-**Budget Request Form**:
-- Multi-step form on mobile (progress indicator)
-- Single-page form on desktop with clear sections
-- File upload for supporting documents/photos
-- Category selection with icon grid
-- Description textarea with character counter
+---
 
-### Rating System
-**Rating Input** (Verification-Focused):
-- Star rating component (large, touch-friendly)
-- Required fields: Photo evidence upload, detailed text review
-- Verification checklist displayed: ✓ Incident linked, ✓ Budget approved, ✓ Invoice matched
-- President authorization indicator
-- Submit disabled until all verification criteria met
+## Components
 
-**Rating Display**:
-- Overall score (large, prominent)
-- Breakdown by criteria: Quality, Timeliness, Budget Adherence
-- Verification badge: "Calificación Verificada" with tooltip explaining process
-- Link to source incident and documentation
-- Provider reply section (if exists)
+### Hero Sections
 
-### Document Management
-**Document List**:
-- List view with file type icons (PDF, JPG, etc.)
-- Metadata: Upload date, uploader role, file size
-- Preview on tap/click
-- Download/share actions
-- Categories: Actas, Facturas, Estatutos, Presupuestos
-- Search and filter bar (sticky on scroll)
+**Landing**:
+- `min-h-screen`, gradient overlay on community photo (16:9 desktop, 4:3 mobile)
+- `text-6xl font-bold` headline, compelling subtitle
+- CTAs: `h-14 px-8`, blurred glass (`backdrop-blur-md bg-white/20 border border-white/30`)
 
-### Forums & Community Board
-**Thread List**:
-- Card-based layout
-- Author avatar, name, role badge
-- Reply count, last activity timestamp
-- Category tags
-- Pin indicator for important announcements
+**Dashboard**:
+- Compact (`h-48/h-64`), community photo background
+- Community name, member count, role badge
+- Quick stats row, action buttons with glass effect
 
-**Thread View**:
-- First post prominent (larger, different background)
-- Nested replies with indent and connection lines
-- Inline reply form (expanding textarea)
-- Sort options: Newest, Oldest, Most Relevant
+### Feed & Cards
+
+**Activity Feed**:
+- Vertical cards: `rounded-2xl shadow-lg p-6`
+- Structure: Avatar (`size-12`) + name + role badge + timestamp → content → media → interaction row (Like/Comment/Share) → nested comments
+- Post types: Incident updates (before/after), budget comparisons, announcements (border accent), provider highlights, ratings
+
+**Card Design**:
+- Base: `rounded-2xl shadow-lg`, hover `scale-102`
+- Padding: `p-6/p-8`
+- Image cards: Full-bleed top (`rounded-t-2xl`)
+- Stat cards: Large number, label, trend arrow
+
+**Incident Cards**:
+- Thumbnail grid (`grid-cols-3 gap-2`)
+- Status badge: `rounded-full px-4 py-1.5 text-sm font-semibold`
+- Progress stepper (horizontal)
+- Mobile: Full-width CTA
+
+**Provider Cards**:
+- Profile: `size-20 rounded-full`, verified badge overlay (top-right)
+- `text-2xl font-bold` name, category pills
+- Star rating: `text-3xl`, review count
+- Stats grid: Jobs, response time, rating breakdown
+- Hover: Shadow increase, border accent
+
+### Budget Comparison
+
+- Hero: Incident summary with images
+- Grid: `grid-cols-1 md:grid-cols-3 gap-6`
+- Provider columns: Logo, name, rating, price (`text-4xl font-bold`)
+- Line items: Sticky header, alternating rows, checkmarks/highlights
+- Mobile: Swipeable carousel → detailed comparison
+
+### Ratings & Verification
+
+**Input**:
+- Stars: `size-10`, interactive
+- Photo grid: Required evidence upload
+- Textarea: `min-h-32`
+- Verification checklist with checkmarks
+- Submit: Disabled until complete
+
+**Display**:
+- Score: `text-6xl font-bold` with stars
+- Breakdown: Horizontal bars
+- Verified badge: `size-16`, "Calificación Verificada" label, glow effect
+- Photo gallery grid below
+
+### Badges
+
+**Verification**: Shield + checkmark, "Verificado", size variants (large/medium/small), glow effect
+
+**Roles**: Pill-shaped, icons (Crown/Building/Briefcase) or initials (P/O/PR)
+
+**Status**: `rounded-full`, icon + text (Open, Budgeted, In Progress, Resolved, Disputed)
 
 ### Forms
-**Form Design Principles**:
-- Labels above inputs (mobile-friendly)
-- Input heights: h-12 minimum (touch-friendly)
-- Focus states: ring-2 ring-offset-2
-- Error messages: text-sm below field
-- Help text: text-xs, muted
-- Required field indicator: asterisk or "(obligatorio)"
-- Submit buttons: w-full on mobile, min-w-32 on desktop
 
-### Notifications
-**Notification System**:
-- Bell icon with unread badge in header
-- Dropdown panel (mobile: bottom sheet, desktop: dropdown)
-- Grouped by type: Incidents, Budgets, Community, Ratings
-- Timestamp and brief preview
-- Unread indicator (bold text, background highlight)
-- Mark as read action
+- Labels: `text-sm font-semibold uppercase tracking-wide`
+- Inputs: `h-14 rounded-xl border-2 px-4`, focus `ring-4`
+- File upload: Drag-drop zone (`min-h-48`), dashed border
+- Multi-step: Progress bar, step indicators
+- Submit: `h-14`, full-width mobile
+- Errors: Border accent, icon, message below
 
-### Status & Verification Badges
-**Status Indicators**:
-- Pill-shaped badges (rounded-full px-3 py-1)
-- Icon + text combination
-- Color-coded states (without specifying colors, design should accommodate):
-  - Open/Active states
-  - In Progress states
-  - Completed/Resolved states
-  - Attention Required states
+### Buttons
 
-**Verification Badge**:
-- Icon (checkmark shield) + "Verificado" text
-- Used on ratings, president actions, completed incidents
-- Tooltip explaining verification criteria
+**Primary**:
+- Size: `h-12/h-14 px-8/px-10 rounded-xl`
+- Font: `text-base/text-lg font-semibold`
+- Full-width mobile, `min-w-40` desktop
 
----
+**On Images**: `backdrop-blur-md bg-white/20 border border-white/30` (or dark variant), readable contrast
 
-## Mobile-First Specific Patterns
-
-**Bottom Sheets**: For filters, quick actions, provider selection
-**Floating Action Button**: Primary action on listing pages (e.g., "+ Nueva Incidencia")
-**Swipe Gestures**: Delete/archive actions on lists, photo gallery navigation
-**Pull to Refresh**: On dashboard, incident list, forum threads
-**Tab Navigation**: Within complex pages (e.g., Provider profile: Info, Reviews, Stats)
-**Sticky Headers**: Table headers, form section headers during scroll
-**Touch Targets**: Minimum 44x44px (h-11 or h-12 in Tailwind)
-
----
-
-## Data Visualization
-
-**Budget Comparison Chart**: Horizontal bar chart showing price ranges
-**Rating Distribution**: Stacked bars showing 5-star to 1-star breakdown
-**Incident Timeline**: Vertical stepper component
-**Community Stats Dashboard**: Card-based KPIs with large numbers and trend indicators
-**Spending Overview**: Simple bar or line chart (month-over-month)
+**FAB** (Mobile): `size-16`, fixed `bottom-20 right-6`, `shadow-2xl`
 
 ---
 
 ## Images
 
-**Hero Image**: NOT applicable for dashboard app - focus on functional first screen (incident list or community stats dashboard)
+**Hero**: High-res community photos, gradient overlay, 16:9 (desktop), 4:3 (mobile)
 
-**Incident Photos**:
-- Thumbnail grid in card (2x2 or 3x2)
-- Full-screen gallery view with zoom capability
-- Before/after comparison layout where applicable
+**Dashboard Banner**: Community-specific, `h-64` desktop / `h-48` mobile, blurred for overlays
 
-**Provider Logos/Photos**:
-- Circular profile images
-- Fallback: Initial avatar with distinct patterns
+**Content**:
+- Incidents: `grid-cols-2/3`, `rounded-xl`, expandable gallery, before/after slider
+- Providers: `size-24` profile (page), `size-12` (cards), masonry portfolio
+- Feed: Full-width in card, `rounded-xl`, `grid-cols-2` (2-4 imgs), `grid-cols-3` (5+)
 
-**Document Previews**:
-- Thumbnail for image documents
-- Icon + filename for PDFs and other files
-
-**Empty States**:
-- Illustrative images for:
-  - No incidents yet
-  - No providers in directory
-  - No documents uploaded
-  - Empty forum
-- Centered, with encouraging call-to-action below
+**Empty States**: Centered illustrations, `text-lg` supporting text, CTA button
 
 ---
 
-## Accessibility & Compliance
+## Micro-Interactions
 
-- High contrast text ratios throughout
-- Form labels properly associated
-- ARIA labels for icon-only buttons
-- Keyboard navigation for all interactive elements
-- Focus indicators visible and distinct
-- Error messages associated with form fields
-- Screen reader announcements for status changes
-- Document links with descriptive text (not just "Download")
+**Hover**: Cards (`scale-102`, shadow++), Buttons (`scale-105`, brightness++), Links (underline slide)
+
+**Loading**: Skeleton screens (pulsing gradient), spinners (branded circular), progress bars (file uploads)
+
+**Transitions**: `duration-200/300 ease-out` - Page (fade+slide), Modal (scale 95→100), Dropdown (slide+fade)
 
 ---
 
-This design creates a professional, trustworthy platform that balances complex functionality with mobile-first usability, emphasizing the verification and transparency that differentiate Provcontrol from competitors.
+## Mobile Patterns
+
+- Pull-to-refresh on feeds
+- Swipe: Delete/archive (left), quick actions (right)
+- Bottom sheets: Filters, replies, share
+- Tab nav within profiles (Info/Reviews/Portfolio)
+- Sticky: Filters, search, CTAs
+- Touch targets: Min `h-12` (48px)
+- Primary actions: Bottom third (thumb zone)
+
+---
+
+## Accessibility
+
+- Contrast: AA minimum, AAA preferred
+- ARIA labels on icon buttons
+- Keyboard: All elements focusable, visible `ring-4` focus
+- Forms: Inline errors with icons
+- Screen reader: Status change announcements
+- Alt text: All images
+- Skip-to-content links
+
+---
+
+**Implementation Note**: Glass morphism (blurred backgrounds on images) and verification badges are signature trust-building elements. Maintain vibrant, social energy through generous spacing, bold typography, and prominent visual verification throughout.
