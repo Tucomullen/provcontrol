@@ -44,6 +44,8 @@ import {
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: UpsertUser): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
   
   getCommunities(): Promise<Community[]>;
@@ -52,6 +54,7 @@ export interface IStorage {
   
   getProviders(): Promise<Provider[]>;
   getProvider(id: string): Promise<Provider | undefined>;
+  getProviderByUserId(userId: string): Promise<Provider | undefined>;
   createProvider(provider: InsertProvider): Promise<Provider>;
   updateProvider(id: string, provider: Partial<InsertProvider>): Promise<Provider | undefined>;
   
@@ -114,11 +117,25 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
+    if (!db) return undefined;
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    if (!db) return undefined;
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(userData: UpsertUser): Promise<User> {
+    if (!db) throw new Error("Database not initialized");
+    const [user] = await db.insert(users).values(userData).returning();
+    return user;
+  }
+
   async upsertUser(userData: UpsertUser): Promise<User> {
+    if (!db) throw new Error("Database not initialized");
     const [user] = await db
       .insert(users)
       .values(userData)
@@ -152,11 +169,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProvider(id: string): Promise<Provider | undefined> {
+    if (!db) return undefined;
     const [provider] = await db.select().from(providers).where(eq(providers.id, id));
     return provider;
   }
 
+  async getProviderByUserId(userId: string): Promise<Provider | undefined> {
+    if (!db) return undefined;
+    const [provider] = await db.select().from(providers).where(eq(providers.userId, userId));
+    return provider;
+  }
+
   async createProvider(providerData: InsertProvider): Promise<Provider> {
+    if (!db) throw new Error("Database not initialized");
     const [provider] = await db.insert(providers).values(providerData).returning();
     return provider;
   }

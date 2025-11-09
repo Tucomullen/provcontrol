@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Building, User, Shield, Bell, Key, Globe } from "lucide-react";
 
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   if (!user) return null;
 
@@ -117,10 +117,10 @@ export default function Settings() {
             <div className="flex items-start gap-3">
               <Key className="w-5 h-5 text-muted-foreground mt-0.5" />
               <div>
-                <p className="text-sm font-medium">Autenticación de Replit</p>
+                <p className="text-sm font-medium">Autenticación</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Tu cuenta está gestionada mediante Replit Auth. Para actualizar tu información
-                  personal, gestiona tu cuenta en la configuración de Replit.
+                  Tu cuenta está gestionada mediante autenticación local. Puedes actualizar tu información
+                  personal en esta sección.
                 </p>
               </div>
             </div>
@@ -161,8 +161,12 @@ export default function Settings() {
                   Cierra sesión en este dispositivo
                 </p>
               </div>
-              <Button variant="destructive" asChild data-testid="button-logout">
-                <a href="/api/logout">Cerrar sesión</a>
+              <Button 
+                variant="destructive" 
+                data-testid="button-logout"
+                onClick={() => logout()}
+              >
+                Cerrar sesión
               </Button>
             </div>
           </div>

@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./auth";
 import {
   insertCommunitySchema,
   insertProviderSchema,
@@ -18,18 +18,10 @@ import {
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  await setupAuth(app);
+  setupAuth(app);
 
-  app.get("/api/auth/user", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
+  // Auth routes are now handled in setupAuth
+  // /api/auth/register, /api/auth/login, /api/auth/logout, /api/auth/user
 
   app.get("/api/communities", isAuthenticated, async (_req, res) => {
     try {
@@ -124,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/incidents", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = await storage.getUser(req.user.id);
       const incidents = await storage.getIncidents(user?.communityId || undefined);
       res.json(incidents);
     } catch (error) {
@@ -234,7 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/ratings", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = await storage.getUser(req.user.id);
       const providerId = req.query.providerId as string | undefined;
       const ratings = await storage.getRatings(providerId, user?.communityId || undefined);
       res.json(ratings);
@@ -273,7 +265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/documents", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = await storage.getUser(req.user.id);
       const documents = await storage.getDocuments(user?.communityId || undefined);
       res.json(documents);
     } catch (error) {
@@ -311,7 +303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/forum-posts", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = await storage.getUser(req.user.id);
       const posts = await storage.getForumPosts(user?.communityId || undefined);
       res.json(posts);
     } catch (error) {
@@ -412,33 +404,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/objects/upload", isAuthenticated, async (_req, res) => {
+  // File upload endpoint - generates a pre-signed URL for local storage
+  app.post("/api/objects/upload", isAuthenticated, async (req, res) => {
     try {
-      const response = await fetch(
-        `${process.env.PUBLIC_OBJECT_SEARCH_PATHS}/upload`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to get upload URL");
-      }
-
-      const data = await response.json();
-      res.json(data);
+      // Generate a unique filename
+      const fileId = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+      const uploadURL = `${baseUrl}/api/objects/upload/${fileId}`;
+      
+      // Return the URL where the file should be uploaded
+      res.json({ uploadURL });
     } catch (error) {
       console.error("Error getting upload URL:", error);
       res.status(500).json({ message: "Failed to get upload URL" });
     }
   });
 
+  // File upload handler - receives the actual file
+  // Note: This route must handle raw body, so JSON parsing is skipped in index.ts
+  app.put("/api/objects/upload/:fileId", isAuthenticated, async (req, res) => {
+    try {
+      const fileId = req.params.fileId;
+      const fs = await import("fs");
+      const pathModule = await import("path");
+      
+      // Ensure uploads directory exists
+      const uploadsDir = pathModule.resolve(import.meta.dirname, "..", "uploads");
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+
+      // Get file extension from content-type or default to .bin
+      const contentType = req.headers["content-type"] || "application/octet-stream";
+      let extension = "bin";
+      if (contentType.startsWith("image/")) {
+        extension = contentType.split("/")[1];
+        if (extension === "jpeg") extension = "jpg";
+      } else if (contentType === "application/pdf") {
+        extension = "pdf";
+      }
+
+      const filename = `${fileId}.${extension}`;
+      const filePath = pathModule.join(uploadsDir, filename);
+
+      // Write file to disk
+      const writeStream = fs.createWriteStream(filePath);
+      req.pipe(writeStream);
+
+      writeStream.on("finish", () => {
+        const fileUrl = `/uploads/${filename}`;
+        res.json({ url: fileUrl, fileId });
+      });
+
+      writeStream.on("error", (error) => {
+        console.error("Error writing file:", error);
+        res.status(500).json({ message: "Failed to save file" });
+      });
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      res.status(500).json({ message: "Failed to upload file" });
+    }
+  });
+
   app.get("/api/invitations/:communityId", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = await storage.getUser(req.user.id);
       if (!user || user.role !== "presidente") {
         return res.status(403).json({ message: "Only presidents can view invitations" });
       }
@@ -452,7 +482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/invitations", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = await storage.getUser(req.user.id);
       if (!user || user.role !== "presidente") {
         return res.status(403).json({ message: "Only presidents can create invitations" });
       }
@@ -496,7 +526,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/invitations/accept/:code", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const invitation = await storage.acceptInvitation(req.params.code, userId);
       
       if (!invitation) {
@@ -519,7 +549,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/invitations/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = await storage.getUser(req.user.id);
       if (!user || user.role !== "presidente") {
         return res.status(403).json({ message: "Only presidents can cancel invitations" });
       }
@@ -534,7 +564,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/transactions", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = await storage.getUser(req.user.id);
       if (!user?.communityId) {
         return res.status(403).json({ message: "User must belong to a community" });
       }
@@ -550,7 +580,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/transactions/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = await storage.getUser(req.user.id);
       if (!user?.communityId) {
         return res.status(403).json({ message: "User must belong to a community" });
       }
@@ -573,7 +603,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/transactions", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = await storage.getUser(req.user.id);
       if (!user || user.role !== "presidente" || !user.communityId) {
         return res.status(403).json({ message: "Only presidents can create transactions" });
       }
@@ -599,7 +629,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/transactions/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = await storage.getUser(req.user.id);
       if (!user || user.role !== "presidente" || !user.communityId) {
         return res.status(403).json({ message: "Only presidents can update transactions" });
       }
@@ -629,7 +659,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/transactions/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = await storage.getUser(req.user.id);
       if (!user || user.role !== "presidente" || !user.communityId) {
         return res.status(403).json({ message: "Only presidents can delete transactions" });
       }
@@ -653,7 +683,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/notifications", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
       const notifications = await storage.getNotifications(userId, limit);
       res.json(notifications);
@@ -665,7 +695,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/notifications/unread-count", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const count = await storage.getUnreadNotificationsCount(userId);
       res.json({ count });
     } catch (error) {
@@ -676,7 +706,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/notifications/:id/read", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const success = await storage.markNotificationAsRead(req.params.id, userId);
       
       if (!success) {
@@ -692,7 +722,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/notifications/mark-all-read", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       await storage.markAllNotificationsAsRead(userId);
       res.json({ message: "All notifications marked as read" });
     } catch (error) {
@@ -703,7 +733,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/ratings/provider/:providerId", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       if (!user || !user.communityId) {
@@ -727,7 +757,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/ratings/stats/:providerId", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       if (!user || !user.communityId) {
@@ -772,7 +802,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/ratings", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       if (!user || !user.communityId) {
@@ -836,7 +866,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/ratings/:id/reply", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       if (!user || user.role !== 'proveedor') {
