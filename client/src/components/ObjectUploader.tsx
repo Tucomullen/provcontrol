@@ -65,7 +65,11 @@ export function ObjectUploader({
         });
 
         if (response.ok) {
-          uploadedUrls.push(url.split('?')[0]);
+          const result = await response.json();
+          // Use the URL from the response, or fallback to the upload URL without query params
+          uploadedUrls.push(result.url || url.split('?')[0]);
+        } else {
+          throw new Error(`Upload failed: ${response.statusText}`);
         }
       }
 

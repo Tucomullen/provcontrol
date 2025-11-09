@@ -9,11 +9,25 @@ declare module 'http' {
     rawBody: unknown
   }
 }
-app.use(express.json({
-  verify: (req, _res, buf) => {
-    req.rawBody = buf;
+// Serve uploaded files statically (before JSON parser to avoid conflicts)
+import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
+
+// JSON parser - but exclude PUT /api/objects/upload routes to allow raw body for file uploads
+app.use((req, res, next) => {
+  if (req.method === "PUT" && req.path.startsWith("/api/objects/upload/")) {
+    return next(); // Skip JSON parsing for file uploads
   }
-}));
+  express.json({
+    verify: (req, _res, buf) => {
+      req.rawBody = buf;
+    }
+  })(req, res, next);
+});
 app.use(express.urlencoded({ extended: false }));
 
 app.use((req, res, next) => {

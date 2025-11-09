@@ -12,7 +12,7 @@ export default function Landing() {
             <h1 className="text-xl font-bold text-foreground">Provcontrol</h1>
           </div>
           <Button asChild data-testid="button-login">
-            <a href="/api/login">Iniciar sesión</a>
+            <a href="/login">Iniciar sesión</a>
           </Button>
         </div>
       </header>
@@ -29,7 +29,7 @@ export default function Landing() {
                 la transparencia, controla el gasto descontrolado y verifica la calidad de los proveedores.
               </p>
               <Button size="lg" asChild data-testid="button-get-started">
-                <a href="/api/login" className="text-lg">
+                <a href="/login" className="text-lg">
                   Comenzar ahora
                 </a>
               </Button>
@@ -114,7 +114,7 @@ export default function Landing() {
               </CardHeader>
               <CardContent className="flex justify-center pb-8">
                 <Button size="lg" asChild>
-                  <a href="/api/login">Solicitar acceso</a>
+                  <a href="/register">Solicitar acceso</a>
                 </Button>
               </CardContent>
             </Card>
