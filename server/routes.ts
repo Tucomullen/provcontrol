@@ -1,7 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage } from "./storage/data-storage";
 import { setupAuth, isAuthenticated } from "./auth";
+import { storage as fileStorage } from "./storage/index";
+import { uploadRateLimit, communityCreationRateLimit } from "./middleware/rateLimit";
 import {
   insertCommunitySchema,
   insertProviderSchema,
@@ -404,65 +406,345 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // File upload endpoint - generates a pre-signed URL for local storage
-  app.post("/api/objects/upload", isAuthenticated, async (req, res) => {
+  // File upload endpoint - uses StorageProvider abstraction
+  // This endpoint receives the file directly and uploads it using the configured storage provider
+  app.post("/api/objects/upload", isAuthenticated, uploadRateLimit, async (req, res) => {
     try {
-      // Generate a unique filename
+      const contentType = req.headers["content-type"] || "";
+      
+      // Si el content-type es application/json, es una petición para obtener la URL de subida
+      // No esperar body, responder inmediatamente
+      if (contentType.includes("application/json")) {
+        const fileId = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+        const baseUrl = `${req.protocol}://${req.get("host")}`;
+        const uploadURL = `${baseUrl}/api/objects/upload/${fileId}`;
+        
+        res.json({ uploadURL });
+        return;
+      }
+      
+      // Si es un upload directo (image/ o application/ con datos), procesarlo
+      if (contentType.startsWith("image/") || contentType.startsWith("application/")) {
+        const chunks: Buffer[] = [];
+        let hasResponded = false;
+        
+        const sendResponse = (status: number, data: any) => {
+          if (hasResponded) return;
+          hasResponded = true;
+          if (!res.headersSent) {
+            res.status(status).json(data);
+          }
+        };
+
+        const sendError = (status: number, message: string) => {
+          if (hasResponded) return;
+          hasResponded = true;
+          if (!res.headersSent) {
+            res.status(status).json({ message });
+          }
+        };
+        
+        req.on("data", (chunk: Buffer) => {
+          chunks.push(chunk);
+        });
+
+        req.on("end", async () => {
+          try {
+            if (chunks.length === 0) {
+              return sendError(400, "No file data received");
+            }
+
+            const buffer = Buffer.concat(chunks);
+            
+            // Extract filename from Content-Disposition header or generate one
+            let fileName = "upload";
+            const contentDisposition = req.headers["content-disposition"];
+            if (contentDisposition) {
+              const match = contentDisposition.match(/filename="?([^"]+)"?/);
+              if (match) {
+                fileName = match[1];
+              }
+            }
+
+            // Upload using storage provider
+            const url = await fileStorage.upload(buffer, fileName, contentType);
+            
+            sendResponse(200, { uploadURL: url, url });
+          } catch (error: any) {
+            console.error("Error uploading file:", error);
+            sendError(500, error.message || "Failed to upload file");
+          }
+        });
+
+        req.on("error", (error) => {
+          console.error("Request error:", error);
+          sendError(500, "Failed to read file data");
+        });
+
+        // Timeout
+        req.setTimeout(30000, () => {
+          if (!hasResponded) {
+            console.error("Upload POST request timeout");
+            sendError(408, "Request timeout");
+          }
+        });
+        
+        return; // Importante: salir aquí para no ejecutar el código de abajo
+      }
+      
+      // Fallback: Generate upload URL for PUT request
       const fileId = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
       const baseUrl = `${req.protocol}://${req.get("host")}`;
       const uploadURL = `${baseUrl}/api/objects/upload/${fileId}`;
       
-      // Return the URL where the file should be uploaded
       res.json({ uploadURL });
     } catch (error) {
-      console.error("Error getting upload URL:", error);
-      res.status(500).json({ message: "Failed to get upload URL" });
+      console.error("Error in upload endpoint:", error);
+      if (!res.headersSent) {
+        res.status(500).json({ message: "Failed to process upload request" });
+      }
     }
   });
 
-  // File upload handler - receives the actual file
+  // Legacy PUT endpoint for file upload (maintains compatibility with existing frontend)
   // Note: This route must handle raw body, so JSON parsing is skipped in index.ts
-  app.put("/api/objects/upload/:fileId", isAuthenticated, async (req, res) => {
+  app.put("/api/objects/upload/:fileId", isAuthenticated, (req, res) => {
+    const fileId = req.params.fileId;
+    const contentType = req.headers["content-type"] || "application/octet-stream";
+    
+    // Read the entire request body as buffer
+    const chunks: Buffer[] = [];
+    let hasResponded = false;
+    
+    const sendResponse = (status: number, data: any) => {
+      if (hasResponded) {
+        console.warn("Attempted to send response twice for PUT upload");
+        return;
+      }
+      hasResponded = true;
+      if (!res.headersSent) {
+        res.status(status).setHeader('Content-Type', 'application/json').json(data);
+      }
+    };
+
+    const sendError = (status: number, message: string) => {
+      if (hasResponded) {
+        console.warn("Attempted to send error response twice for PUT upload");
+        return;
+      }
+      hasResponded = true;
+      if (!res.headersSent) {
+        res.status(status).json({ message });
+      }
+    };
+    
+    req.on("data", (chunk: Buffer) => {
+      chunks.push(chunk);
+    });
+
+    req.on("end", async () => {
+      try {
+        if (chunks.length === 0) {
+          return sendError(400, "No file data received");
+        }
+
+        const buffer = Buffer.concat(chunks);
+        
+        // Determine file extension from content type
+        let extension = "bin";
+        if (contentType.startsWith("image/")) {
+          extension = contentType.split("/")[1];
+          if (extension === "jpeg") extension = "jpg";
+        } else if (contentType === "application/pdf") {
+          extension = "pdf";
+        }
+
+        const fileName = `${fileId}.${extension}`;
+        
+        // Upload using storage provider
+        const url = await fileStorage.upload(buffer, fileName, contentType);
+        
+        sendResponse(200, { url, fileId });
+      } catch (error: any) {
+        console.error("Error uploading file:", error);
+        sendError(500, error.message || "Failed to save file");
+      }
+    });
+
+    req.on("error", (error) => {
+      console.error("Request error:", error);
+      sendError(500, "Failed to read file data");
+    });
+
+    // Timeout para evitar que la conexión se quede colgada
+    req.setTimeout(30000, () => {
+      if (!hasResponded) {
+        console.error("Upload request timeout after 30 seconds");
+        sendError(408, "Request timeout");
+      }
+    });
+  });
+
+  // Onboarding endpoints
+  app.get("/api/onboarding/status", isAuthenticated, async (req: any, res) => {
     try {
-      const fileId = req.params.fileId;
-      const fs = await import("fs");
-      const pathModule = await import("path");
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      const allCommunities = await storage.getCommunities();
       
-      // Ensure uploads directory exists
-      const uploadsDir = pathModule.resolve(import.meta.dirname, "..", "uploads");
-      if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir, { recursive: true });
+      const hasCommunities = allCommunities.length > 0;
+      const userHasCommunity = !!user?.communityId;
+      const needsEmailVerification = user?.role === "presidente" && !user?.emailVerified;
+      const canCreateCommunity = !userHasCommunity && !hasCommunities;
+      
+      // Para proveedores, verificar si tienen perfil creado
+      let hasProviderProfile = false;
+      if (user?.role === "proveedor") {
+        const provider = await storage.getProviderByUserId(userId);
+        hasProviderProfile = !!provider;
       }
 
-      // Get file extension from content-type or default to .bin
-      const contentType = req.headers["content-type"] || "application/octet-stream";
-      let extension = "bin";
-      if (contentType.startsWith("image/")) {
-        extension = contentType.split("/")[1];
-        if (extension === "jpeg") extension = "jpg";
-      } else if (contentType === "application/pdf") {
-        extension = "pdf";
-      }
-
-      const filename = `${fileId}.${extension}`;
-      const filePath = pathModule.join(uploadsDir, filename);
-
-      // Write file to disk
-      const writeStream = fs.createWriteStream(filePath);
-      req.pipe(writeStream);
-
-      writeStream.on("finish", () => {
-        const fileUrl = `/uploads/${filename}`;
-        res.json({ url: fileUrl, fileId });
-      });
-
-      writeStream.on("error", (error) => {
-        console.error("Error writing file:", error);
-        res.status(500).json({ message: "Failed to save file" });
+      res.json({
+        hasCommunities,
+        userHasCommunity,
+        needsEmailVerification,
+        canCreateCommunity,
+        hasProviderProfile,
       });
     } catch (error) {
-      console.error("Error uploading file:", error);
-      res.status(500).json({ message: "Failed to upload file" });
+      console.error("Error fetching onboarding status:", error);
+      res.status(500).json({ message: "Failed to fetch onboarding status" });
+    }
+  });
+
+  app.post("/api/onboarding/community", isAuthenticated, communityCreationRateLimit, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      // Validar que el usuario no tenga comunidad asignada
+      if (user?.communityId) {
+        return res.status(400).json({ message: "El usuario ya pertenece a una comunidad" });
+      }
+
+      // Validar que el usuario sea presidente (solo presidentes pueden crear comunidades)
+      if (user?.role !== "presidente") {
+        return res.status(403).json({ message: "Solo los presidentes pueden crear comunidades" });
+      }
+
+      const { name, address, city, postalCode, totalUnits, description, logoUrl } = req.body;
+
+      if (!name || !address || !city || !postalCode || !totalUnits) {
+        return res.status(400).json({ message: "Faltan campos requeridos: name, address, city, postalCode, totalUnits" });
+      }
+
+      // Generar slug único desde el nombre
+      let baseSlug = name
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // Eliminar acentos
+        .replace(/[^a-z0-9]+/g, "-") // Reemplazar caracteres especiales con guiones
+        .replace(/^-+|-+$/g, ""); // Eliminar guiones al inicio y final
+
+      // Asegurar que el slug tenga al menos 3 caracteres
+      if (baseSlug.length < 3) {
+        baseSlug = `comunidad-${Date.now()}`;
+      }
+
+      // Limitar a 100 caracteres (requisito del schema)
+      if (baseSlug.length > 100) {
+        baseSlug = baseSlug.substring(0, 100).replace(/-+$/, ""); // Eliminar guiones finales después del truncado
+      }
+
+      // Verificar que el slug sea único, si no, agregar sufijo
+      let slug = baseSlug;
+      let counter = 1;
+      while (await storage.getCommunityBySlug(slug)) {
+        const suffix = `-${counter}`;
+        // Asegurar que el slug completo no exceda 100 caracteres
+        const maxBaseLength = 100 - suffix.length;
+        const truncatedBase = baseSlug.substring(0, maxBaseLength).replace(/-+$/, "");
+        slug = `${truncatedBase}${suffix}`;
+        counter++;
+      }
+
+      // Crear comunidad
+      const communityData = {
+        name,
+        slug,
+        address,
+        city,
+        postalCode,
+        totalUnits: parseInt(totalUnits),
+        description: description || null,
+        logoUrl: logoUrl || null,
+        presidentId: userId,
+      };
+
+      const result = insertCommunitySchema.safeParse(communityData);
+      if (!result.success) {
+        return res.status(400).json({ message: "Datos inválidos", errors: result.error.errors });
+      }
+
+      const community = await storage.createCommunity(result.data);
+
+      // Asignar usuario como presidente y asignar a la comunidad
+      await storage.upsertUser({
+        id: userId,
+        communityId: community.id,
+        role: "presidente",
+      });
+
+      // Crear registro en audit_logs
+      await storage.createAuditLog({
+        userId,
+        action: "community_created",
+        entityType: "community",
+        entityId: community.id,
+        metadata: { communityName: community.name, slug: community.slug },
+      });
+
+      res.status(201).json(community);
+    } catch (error: any) {
+      console.error("Error creating community:", error);
+      console.error("Error details:", {
+        message: error.message,
+        code: error.code,
+        detail: error.detail,
+        stack: error.stack,
+      });
+      
+      // Errores de base de datos específicos
+      if (error.code === "23505") {
+        // Violación de constraint único (slug duplicado)
+        return res.status(400).json({ message: "El slug de la comunidad ya existe. Intenta con otro nombre." });
+      }
+      if (error.code === "23502") {
+        // Violación de NOT NULL
+        return res.status(400).json({ 
+          message: `Campo requerido faltante: ${error.column || "desconocido"}`,
+          detail: error.detail 
+        });
+      }
+      if (error.code === "23503") {
+        // Violación de foreign key
+        return res.status(400).json({ 
+          message: "Error de referencia: El usuario o recurso referenciado no existe",
+          detail: error.detail 
+        });
+      }
+      
+      // En desarrollo, devolver más detalles del error
+      if (process.env.NODE_ENV === "development") {
+        return res.status(500).json({ 
+          message: "Error al crear la comunidad",
+          error: error.message,
+          code: error.code,
+          detail: error.detail,
+        });
+      }
+      
+      res.status(500).json({ message: "Error al crear la comunidad" });
     }
   });
 
@@ -527,12 +809,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/invitations/accept/:code", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const invitation = await storage.acceptInvitation(req.params.code, userId);
+      const user = await storage.getUser(userId);
       
-      if (!invitation) {
-        return res.status(404).json({ message: "Invalid or expired invitation code" });
+      // Verificar que el usuario esté autenticado
+      if (!user) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
       }
 
+      // Verificar que el usuario no tenga ya una comunidad asignada
+      if (user.communityId) {
+        return res.status(400).json({ message: "Ya perteneces a una comunidad" });
+      }
+
+      // Obtener invitación
+      const invitation = await storage.getInvitationByCode(req.params.code);
+      
+      if (!invitation) {
+        return res.status(404).json({ message: "Código de invitación inválido o expirado" });
+      }
+
+      // Validar que la invitación no esté expirada
+      if (new Date(invitation.expiresAt) < new Date()) {
+        return res.status(400).json({ message: "La invitación ha expirado" });
+      }
+
+      // Validar que la invitación esté pendiente
+      if (invitation.status !== "pendiente") {
+        return res.status(400).json({ message: "La invitación ya fue utilizada o cancelada" });
+      }
+
+      // Aceptar invitación (esto actualiza el estado)
+      const acceptedInvitation = await storage.acceptInvitation(req.params.code, userId);
+      
+      if (!acceptedInvitation) {
+        return res.status(500).json({ message: "Error al aceptar la invitación" });
+      }
+
+      // Asignar usuario a comunidad con rol de invitación
       await storage.upsertUser({
         id: userId,
         communityId: invitation.communityId,
@@ -540,10 +853,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         propertyUnit: invitation.propertyUnit || undefined,
       });
 
-      res.json({ message: "Invitation accepted successfully", invitation });
+      // Crear registro en audit_logs
+      await storage.createAuditLog({
+        userId,
+        action: "invitation_accepted",
+        entityType: "invitation",
+        entityId: invitation.id,
+        metadata: {
+          communityId: invitation.communityId,
+          role: invitation.role,
+        },
+      });
+
+      res.json({ message: "Invitación aceptada exitosamente", invitation: acceptedInvitation });
     } catch (error) {
       console.error("Error accepting invitation:", error);
-      res.status(500).json({ message: "Failed to accept invitation" });
+      res.status(500).json({ message: "Error al aceptar la invitación" });
     }
   });
 

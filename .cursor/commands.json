@@ -1,0 +1,45 @@
+{
+  "commands": [
+    {
+      "name": "test:all",
+      "description": "Ejecutar todos los tests E2E con Playwright",
+      "command": "npm test"
+    },
+    {
+      "name": "test:ui",
+      "description": "Ejecutar tests con UI interactiva de Playwright",
+      "command": "npm run test:ui"
+    },
+    {
+      "name": "test:headed",
+      "description": "Ejecutar tests viendo el navegador (útil para debugging)",
+      "command": "npm run test:headed"
+    },
+    {
+      "name": "test:auth",
+      "description": "Ejecutar solo tests de autenticación",
+      "command": "npm run test:auth"
+    },
+    {
+      "name": "test:onboarding",
+      "description": "Ejecutar solo tests de onboarding",
+      "command": "npm run test:onboarding"
+    },
+    {
+      "name": "test:smoke",
+      "description": "Ejecutar tests básicos de smoke (verificación rápida)",
+      "command": "npm run test:smoke"
+    },
+    {
+      "name": "test:debug",
+      "description": "Ejecutar tests en modo debug paso a paso",
+      "command": "npm run test:debug"
+    },
+    {
+      "name": "test:report",
+      "description": "Abrir reporte HTML de tests ejecutados",
+      "command": "npm run test:report"
+    }
+  ]
+}
+

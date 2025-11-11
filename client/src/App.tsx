@@ -12,6 +12,11 @@ import NotFound from "@/pages/NotFound";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import RegisterProvider from "@/pages/RegisterProvider";
+import CreateCommunity from "@/pages/onboarding/CreateCommunity";
+import JoinCommunity from "@/pages/onboarding/JoinCommunity";
+import EmailVerification from "@/pages/onboarding/EmailVerification";
+import CreateProviderProfile from "@/pages/onboarding/CreateProviderProfile";
 import Dashboard from "@/pages/Dashboard";
 import Incidents from "@/pages/Incidents";
 import IncidentDetail from "@/pages/IncidentDetail";
@@ -33,6 +38,11 @@ function Router() {
         <Route path="/" component={Landing} />
         <Route path="/login" component={Login} />
         <Route path="/register" component={Register} />
+        <Route path="/register/provider" component={RegisterProvider} />
+        <Route path="/onboarding/create-community" component={CreateCommunity} />
+        <Route path="/onboarding/join" component={JoinCommunity} />
+        <Route path="/onboarding/verify-email" component={EmailVerification} />
+        <Route path="/onboarding/create-provider-profile" component={CreateProviderProfile} />
         <Route component={NotFound} />
       </Switch>
     );
@@ -51,6 +61,10 @@ function Router() {
       <Route path="/foro" component={Forum} />
       <Route path="/invitaciones" component={Invitations} />
       <Route path="/configuracion" component={Settings} />
+      <Route path="/onboarding/create-community" component={CreateCommunity} />
+      <Route path="/onboarding/join" component={JoinCommunity} />
+      <Route path="/onboarding/verify-email" component={EmailVerification} />
+      <Route path="/onboarding/create-provider-profile" component={CreateProviderProfile} />
       <Route component={NotFound} />
     </Switch>
   );

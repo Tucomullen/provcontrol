@@ -19,7 +19,39 @@ export async function apiRequest(
     credentials: "include",
   });
 
-  await throwIfResNotOk(res);
+  if (!res.ok) {
+    // Intentar parsear el error como JSON
+    let errorMessage = res.statusText;
+    const contentType = res.headers.get("content-type");
+    
+    try {
+      if (contentType && contentType.includes("application/json")) {
+        const errorData = await res.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+        // Crear un error con más información
+        const error = new Error(errorMessage);
+        (error as any).status = res.status;
+        (error as any).data = errorData;
+        throw error;
+      } else {
+        // Si no es JSON, usar el texto
+        const text = await res.text();
+        const error = new Error(text || errorMessage);
+        (error as any).status = res.status;
+        throw error;
+      }
+    } catch (e: any) {
+      // Si ya es un Error que lanzamos, re-lanzarlo
+      if (e instanceof Error && (e as any).status) {
+        throw e;
+      }
+      // Si hay otro error, crear uno nuevo
+      const error = new Error(errorMessage);
+      (error as any).status = res.status;
+      throw error;
+    }
+  }
+  
   return res;
 }
 

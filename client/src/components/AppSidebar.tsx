@@ -86,7 +86,7 @@ const menuItems = [
 ];
 
 export function AppSidebar() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const userInitials = user
     ? `${user.firstName?.charAt(0) || ""}${user.lastName?.charAt(0) || ""}`.toUpperCase()
@@ -147,7 +147,7 @@ export function AppSidebar() {
               variant="outline"
               size="sm"
               className="w-full"
-              onClick={() => (window.location.href = "/api/logout")}
+              onClick={() => logout()}
               data-testid="button-logout"
             >
               <LogOut className="w-4 h-4 mr-2" />

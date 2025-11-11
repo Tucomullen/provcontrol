@@ -8,7 +8,19 @@ Provcontrol is a mobile-first property management platform designed for Spanish-
 
 **Key Differentiator**: Unlike traditional property management software controlled by administrators, Provcontrol is contracted directly by the community to ensure technological continuity and prevent vendor lock-in.
 
-## Recent Changes (November 7, 2025)
+## Recent Changes
+
+### Storage Abstraction Refactoring (Current)
+- ✅ Implemented factory pattern for storage (`server/storage/factory.ts`)
+- ✅ Created data storage module (`server/storage/data-storage.ts`) as single import point
+- ✅ Updated all imports in routes and auth to use abstraction layer
+- ✅ Created domain types (`shared/types.ts`) independent of ORM
+- ✅ Created mappers (`server/storage/mappers.ts`) for type conversion
+- ✅ Added validation script (`scripts/validate-dependencies.sh`) to enforce architecture rules
+- ✅ Updated architecture documentation in this file
+- ✅ All database access now properly abstracted for future migrations
+
+### Previous Changes (November 7, 2025)
 
 **Social Network Features Completed:**
 - ✅ Interactive provider profiles with tabs (Valoraciones, Portfolio, Historial)
@@ -169,6 +181,91 @@ The rating system implements a multi-layer verification approach:
 - Required: DATABASE_URL environment variable
 - Migration management via drizzle-kit
 
+### Data Access Layer (Storage Abstraction)
+
+**Architecture Pattern**: Repository Pattern with Factory
+
+The application uses a strict abstraction layer for all database access to enable easy migration between different storage backends (PostgreSQL, PocketBase, etc.) without changing business logic.
+
+**Key Components**:
+
+1. **IStorage Interface** (`server/storage.ts`):
+   - Defines all data access methods (getUser, createUser, getCommunities, etc.)
+   - All methods return domain types (User, Community, etc.)
+   - Implementation-agnostic contract that any storage backend must fulfill
+
+2. **DatabaseStorage Implementation** (`server/storage.ts`):
+   - Current implementation using Drizzle ORM with PostgreSQL
+   - Encapsulates all direct database queries (`db.select()`, `db.insert()`, etc.)
+   - **CRITICAL**: Only this class should access `db` directly
+
+3. **Storage Factory** (`server/storage/factory.ts`):
+   - Creates appropriate storage implementation based on `STORAGE_PROVIDER` env var
+   - Default: `postgresql` (uses DatabaseStorage)
+   - Future: Can support `pocketbase`, `mock` (for testing), etc.
+   - Singleton pattern: `storage` instance exported for application-wide use
+
+4. **Data Storage Module** (`server/storage/data-storage.ts`):
+   - Main entry point for importing storage throughout the application
+   - Re-exports `storage` singleton and `IStorage` interface
+   - **Always import from here**: `import { storage } from "./storage/data-storage"`
+
+**Architectural Rules**:
+
+1. **Never import `db` directly** outside of `DatabaseStorage` class
+   - ❌ Wrong: `import { db } from "./db"` in routes.ts
+   - ✅ Correct: `import { storage } from "./storage/data-storage"`
+
+2. **Never use database operations directly** outside of storage implementations
+   - ❌ Wrong: `db.select().from(users)` in routes.ts
+   - ✅ Correct: `await storage.getUser(id)` in routes.ts
+
+3. **All data access must go through `storage` instance**
+   - Routes, auth, and business logic use `storage` methods only
+   - Storage implementations handle all ORM/database-specific code
+
+4. **Storage implementations are swappable**
+   - Change `STORAGE_PROVIDER` env var to switch backends
+   - No code changes needed in routes, auth, or business logic
+
+**File Structure**:
+```
+server/
+  storage/
+    factory.ts          # Factory pattern for creating storage instances
+    data-storage.ts    # Main export point (import from here)
+    local.ts           # File storage (uploads) - separate from data storage
+    s3.ts              # S3 file storage - separate from data storage
+    index.ts           # File storage exports (uploads)
+  storage.ts           # IStorage interface + DatabaseStorage implementation
+  db.ts                # Database connection (only used by DatabaseStorage)
+```
+
+**Migration Strategy**:
+
+To migrate to a different backend (e.g., PocketBase):
+
+1. Create new implementation: `server/storage/pocketbase.ts` implementing `IStorage`
+2. Update factory: Add `case "pocketbase": return new PocketBaseStorage()`
+3. Change env var: Set `STORAGE_PROVIDER=pocketbase`
+4. No other code changes needed!
+
+**Domain Types and Mappers**:
+
+To further decouple storage implementations from the ORM, domain types are defined in `shared/types.ts`:
+
+- `DomainUser`, `DomainCommunity`, `DomainProvider`, etc.
+- These types are independent of Drizzle ORM
+- Mappers in `server/storage/mappers.ts` convert between Drizzle types and domain types
+- **Current Status**: Domain types and mappers are created but not yet used in IStorage interface (for backward compatibility)
+- **Future**: IStorage interface can be updated to use domain types, and DatabaseStorage will use mappers for conversion
+
+**Validation**:
+- Run `./scripts/validate-dependencies.sh` to ensure no direct `db` access
+- Script checks for violations of abstraction layer rules
+- Should be run before commits and in CI/CD pipeline
+- Script excludes `storage.ts` (the implementation) from validation
+
 ### UI Component Libraries
 
 **Radix UI Primitives** (20+ components):
@@ -212,9 +309,25 @@ The rating system implements a multi-layer verification approach:
 
 ### Critical Environment Variables
 
+**Database & Storage**:
 - `DATABASE_URL`: PostgreSQL connection string (required)
+- `STORAGE_PROVIDER`: Data storage backend (`postgresql` default, future: `pocketbase`, `mock`)
+- `STORAGE_LOCAL_PATH`: Local file storage path (for uploads, optional)
+- `S3_BUCKET`, `S3_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`: S3 file storage config (optional)
+
+**Authentication & Security**:
 - `SESSION_SECRET`: Session encryption key (required)
 - `JWT_SECRET`: JWT token signing secret (required)
 - `JWT_EXPIRES_IN`: JWT token expiration time (default: 7d)
+
+**Server Configuration**:
 - `PORT`: Server port (default: 3000)
 - `NODE_ENV`: Environment mode (development/production)
+- `APP_URL`: Application URL for email verification links (default: http://localhost:3000)
+
+**Rate Limiting**:
+- `RATE_LIMIT_WINDOW_MS`: Time window for rate limiting (default: 900000 = 15 min)
+- `RATE_LIMIT_MAX_REGISTER`: Max registration attempts per window (default: 5)
+- `RATE_LIMIT_MAX_LOGIN`: Max login attempts per window (default: 10)
+- `RATE_LIMIT_MAX_UPLOAD`: Max file uploads per hour (default: 20)
+- `RATE_LIMIT_MAX_COMMUNITY_CREATION`: Max community creations per 24h (default: 3)

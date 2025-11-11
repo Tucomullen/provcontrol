@@ -1,28 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Mail } from "lucide-react";
+import { Shield, Briefcase } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
-export default function Register() {
+export default function RegisterProvider() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { refetch } = useAuth();
-  
-  // Leer query params
-  const [searchParams] = useState(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      return {
-        invite: params.get("invite"),
-      };
-    }
-    return { invite: null };
-  });
 
   const [formData, setFormData] = useState({
     email: "",
@@ -33,24 +22,8 @@ export default function Register() {
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  // Si no hay invitación, redirigir a landing
-  useEffect(() => {
-    if (!searchParams.invite) {
-      toast({
-        title: "Acceso no válido",
-        description: "Por favor, usa los flujos específicos desde la página principal",
-        variant: "destructive",
-      });
-      setTimeout(() => setLocation("/"), 2000);
-    }
-  }, [searchParams.invite, setLocation, toast]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!searchParams.invite) {
-      return;
-    }
 
     if (formData.password !== formData.confirmPassword) {
       toast({
@@ -84,7 +57,7 @@ export default function Register() {
           password: formData.password,
           firstName: formData.firstName,
           lastName: formData.lastName,
-          role: "propietario", // Rol por defecto para invitaciones
+          role: "proveedor", // Rol fijo para proveedores
         }),
       });
 
@@ -99,11 +72,11 @@ export default function Register() {
 
       toast({
         title: "Registro exitoso",
-        description: "Tu cuenta ha sido creada correctamente",
+        description: "Tu cuenta de proveedor ha sido creada correctamente",
       });
 
-      // Redirigir a aceptar invitación
-      setLocation(`/onboarding/join?code=${searchParams.invite}`);
+      // Redirigir a creación de perfil de proveedor
+      setLocation("/onboarding/create-provider-profile");
     } catch (error: any) {
       toast({
         title: "Error",
@@ -115,38 +88,16 @@ export default function Register() {
     }
   };
 
-  // Si no hay invitación, mostrar mensaje
-  if (!searchParams.invite) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="space-y-1 text-center">
-            <Shield className="w-12 h-12 text-primary mx-auto mb-4" />
-            <CardTitle className="text-2xl">Acceso no válido</CardTitle>
-            <CardDescription>
-              Por favor, usa los flujos específicos desde la página principal
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => setLocation("/")} className="w-full">
-              Volver a la página principal
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
-            <Mail className="w-12 h-12 text-primary" />
+            <Briefcase className="w-12 h-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl text-center">Registro con Invitación</CardTitle>
+          <CardTitle className="text-2xl text-center">Registro de Proveedor</CardTitle>
           <CardDescription className="text-center">
-            Crea tu cuenta para unirte a la comunidad
+            Crea tu cuenta para ofrecer tus servicios a las comunidades
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -215,7 +166,7 @@ export default function Register() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creando cuenta..." : "Crear cuenta y unirse"}
+              {isLoading ? "Creando cuenta..." : "Crear cuenta de proveedor"}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">

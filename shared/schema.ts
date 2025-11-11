@@ -75,7 +75,9 @@ export const users = pgTable("users", {
   role: userRoleEnum("role").notNull().default("propietario"),
   communityId: varchar("community_id").references(() => communities.id),
   propertyUnit: varchar("property_unit"),
-  isVerified: boolean("is_verified").default(false),
+  emailVerified: boolean("email_verified").default(false),
+  emailVerificationToken: varchar("email_verification_token"),
+  emailVerificationExpires: timestamp("email_verification_expires"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -87,10 +89,13 @@ export type UpsertUser = typeof users.$inferInsert;
 export const communities = pgTable("communities", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 100 }).notNull().unique(),
   address: text("address").notNull(),
   city: varchar("city", { length: 100 }).notNull(),
   postalCode: varchar("postal_code", { length: 10 }).notNull(),
   totalUnits: integer("total_units").notNull(),
+  description: text("description"),
+  logoUrl: varchar("logo_url"),
   presidentId: varchar("president_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -100,6 +105,8 @@ export const insertCommunitySchema = createInsertSchema(communities).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  slug: z.string().min(3).max(100).regex(/^[a-z0-9-]+$/, "Slug solo puede contener letras minúsculas, números y guiones"),
 });
 export type Community = typeof communities.$inferSelect;
 export type InsertCommunity = z.infer<typeof insertCommunitySchema>;
@@ -379,6 +386,24 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 });
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+// Audit Logs table - Tracking de eventos importantes
+export const auditLogs = pgTable("audit_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  action: varchar("action", { length: 100 }).notNull(), // e.g., "community_created", "invitation_accepted"
+  entityType: varchar("entity_type", { length: 50 }), // e.g., "community", "invitation", "user"
+  entityId: varchar("entity_id"),
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_audit_logs_user_id").on(table.userId),
+  index("IDX_audit_logs_action").on(table.action),
+  index("IDX_audit_logs_created_at").on(table.createdAt),
+]);
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = typeof auditLogs.$inferInsert;
 
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({

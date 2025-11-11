@@ -54,7 +54,9 @@ export function ObjectUploader({
       const uploadedUrls: string[] = [];
       
       for (const file of files) {
+        console.log("Getting upload parameters for file:", file.name);
         const { method, url } = await onGetUploadParameters();
+        console.log("Upload URL:", url);
         
         const response = await fetch(url, {
           method,
@@ -64,30 +66,55 @@ export function ObjectUploader({
           },
         });
 
+        console.log("Upload response status:", response.status, response.statusText);
+
         if (response.ok) {
-          const result = await response.json();
-          // Use the URL from the response, or fallback to the upload URL without query params
-          uploadedUrls.push(result.url || url.split('?')[0]);
+          let result;
+          const contentType = response.headers.get('content-type');
+          console.log("Response content-type:", contentType);
+          
+          if (contentType && contentType.includes('application/json')) {
+            result = await response.json();
+            console.log("Upload result:", result);
+            // El servidor devuelve { url, fileId }, usar la URL del resultado
+            const fileUrl = result.url || url.split('?')[0];
+            uploadedUrls.push(fileUrl);
+          } else {
+            // Si no es JSON, usar la URL directamente sin query params
+            const fileUrl = url.split('?')[0];
+            uploadedUrls.push(fileUrl);
+          }
         } else {
-          throw new Error(`Upload failed: ${response.statusText}`);
+          const errorText = await response.text();
+          console.error("Upload failed:", response.status, errorText);
+          throw new Error(`Upload failed: ${response.statusText} - ${errorText}`);
         }
       }
 
+      console.log("All files uploaded, URLs:", uploadedUrls);
+
       if (onComplete && uploadedUrls.length > 0) {
-        onComplete({
+        const completeResult = {
           successful: uploadedUrls.map((uploadURL) => ({ uploadURL })),
-        });
+        };
+        console.log("Calling onComplete with:", completeResult);
+        onComplete(completeResult);
+      } else if (uploadedUrls.length === 0) {
+        throw new Error("No files were uploaded successfully");
       }
     } catch (error) {
       console.error("Upload error:", error);
       toast({
         title: "Error al subir archivos",
-        description: "Por favor, inténtalo de nuevo",
+        description: error instanceof Error ? error.message : "Por favor, inténtalo de nuevo",
         variant: "destructive",
       });
     } finally {
+      console.log("Resetting upload state");
       setIsUploading(false);
-      event.target.value = '';
+      if (event.target) {
+        event.target.value = '';
+      }
     }
   };
 
@@ -102,15 +129,14 @@ export function ObjectUploader({
         id="file-upload-input"
         accept="image/*,application/pdf,.doc,.docx"
       />
-      <Button
-        type="button"
-        onClick={() => document.getElementById('file-upload-input')?.click()}
+      <div
+        onClick={() => !isUploading && document.getElementById('file-upload-input')?.click()}
         className={buttonClassName}
-        disabled={isUploading}
         data-testid="button-upload-file"
+        style={{ cursor: isUploading ? 'not-allowed' : 'pointer', opacity: isUploading ? 0.6 : 1 }}
       >
         {isUploading ? "Subiendo..." : children}
-      </Button>
+      </div>
     </div>
   );
 }

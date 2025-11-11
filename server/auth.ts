@@ -2,8 +2,9 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import type { Express, RequestHandler } from "express";
 import session from "express-session";
-import { storage } from "./storage";
+import { storage } from "./storage/data-storage";
 import type { User } from "@shared/schema";
+import { registerRateLimit, loginRateLimit } from "./middleware/rateLimit";
 
 // Extend Express Request to include user
 declare global {
@@ -176,7 +177,7 @@ export function setupAuth(app: Express) {
   app.use(getSession());
 
   // Register endpoint
-  app.post("/api/auth/register", async (req, res) => {
+  app.post("/api/auth/register", registerRateLimit, async (req, res) => {
     try {
       const { email, password, firstName, lastName, role } = req.body;
 
@@ -205,10 +206,20 @@ export function setupAuth(app: Express) {
         role: user.role,
       });
 
-      res.status(201).json({
+      // En desarrollo, incluir token de verificación en la respuesta
+      const userWithToken = await storage.getUser(user.id);
+      const response: any = {
         user,
         token,
-      });
+      };
+
+      if (process.env.NODE_ENV === "development" && userWithToken?.emailVerificationToken) {
+        const appUrl = process.env.APP_URL || "http://localhost:3000";
+        response.verificationToken = userWithToken.emailVerificationToken;
+        response.verificationUrl = `${appUrl}/onboarding/verify-email?token=${userWithToken.emailVerificationToken}`;
+      }
+
+      res.status(201).json(response);
     } catch (error: any) {
       console.error("Registration error:", error);
       res.status(400).json({ message: error.message || "Registration failed" });
@@ -216,7 +227,7 @@ export function setupAuth(app: Express) {
   });
 
   // Login endpoint
-  app.post("/api/auth/login", async (req, res) => {
+  app.post("/api/auth/login", loginRateLimit, async (req, res) => {
     try {
       const { email, password } = req.body;
 
@@ -281,6 +292,103 @@ export function setupAuth(app: Express) {
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Email verification endpoint
+  app.post("/api/auth/verify-email", async (req, res) => {
+    try {
+      const { token } = req.body;
+
+      if (!token) {
+        return res.status(400).json({ message: "Token de verificación requerido" });
+      }
+
+      // Buscar usuario con este token
+      const users = await storage.getUserByEmail(""); // Necesitamos buscar por token
+      // Como no tenemos método directo, usaremos una query manual
+      const { db } = await import("./db");
+      const { users: usersTable } = await import("@shared/schema");
+      const { eq, and, gt } = await import("drizzle-orm");
+
+      if (!db) {
+        return res.status(500).json({ message: "Database not initialized" });
+      }
+
+      const [user] = await db
+        .select()
+        .from(usersTable)
+        .where(
+          and(
+            eq(usersTable.emailVerificationToken, token),
+            gt(usersTable.emailVerificationExpires, new Date())
+          )
+        );
+
+      if (!user) {
+        return res.status(400).json({ message: "Token inválido o expirado" });
+      }
+
+      // Marcar email como verificado
+      await storage.upsertUser({
+        id: user.id,
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+      });
+
+      res.json({ message: "Email verificado exitosamente" });
+    } catch (error) {
+      console.error("Error verifying email:", error);
+      res.status(500).json({ message: "Error al verificar el email" });
+    }
+  });
+
+  // Resend verification email endpoint
+  app.post("/api/auth/resend-verification", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+
+      if (!user) {
+        return res.status(404).json({ message: "Usuario no encontrado" });
+      }
+
+      if (user.emailVerified) {
+        return res.status(400).json({ message: "El email ya está verificado" });
+      }
+
+      // Generar nuevo token de verificación
+      const crypto = await import("crypto");
+      const token = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24); // Expira en 24 horas
+
+      await storage.upsertUser({
+        id: user.id,
+        emailVerificationToken: token,
+        emailVerificationExpires: expiresAt,
+      });
+
+      // En desarrollo, retornar el token. En producción, enviar email
+      const appUrl = process.env.APP_URL || "http://localhost:3000";
+      const verificationUrl = `${appUrl}/onboarding/verify-email?token=${token}`;
+
+      if (process.env.NODE_ENV === "development") {
+        res.json({
+          message: "Token de verificación generado",
+          token,
+          verificationUrl,
+        });
+      } else {
+        // TODO: Enviar email con el token
+        res.json({
+          message: "Email de verificación enviado",
+        });
+      }
+    } catch (error) {
+      console.error("Error resending verification:", error);
+      res.status(500).json({ message: "Error al reenviar verificación" });
     }
   });
 }

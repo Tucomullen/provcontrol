@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Limpiar Caché - Provcontrol</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .success {
+            color: #10b981;
+            margin-top: 20px;
+            padding: 10px;
+            background: #d1fae5;
+            border-radius: 4px;
+        }
+        .info {
+            color: #6b7280;
+            margin-top: 20px;
+            padding: 10px;
+            background: #f3f4f6;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Limpiar Caché del Navegador</h1>
+        <p>Este script limpiará el localStorage y sessionStorage de tu navegador.</p>
+        
+        <button onclick="clearAll()">Limpiar Todo</button>
+        <button onclick="clearLocalStorage()">Solo localStorage</button>
+        <button onclick="clearSessionStorage()">Solo sessionStorage</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function clearLocalStorage() {
+            try {
+                const keys = Object.keys(localStorage);
+                keys.forEach(key => {
+                    if (key.startsWith('onboarding-') || key.startsWith('provcontrol-')) {
+                        localStorage.removeItem(key);
+                    }
+                });
+                // También limpiar todo si el usuario quiere empezar desde cero
+                localStorage.clear();
+                showResult('✅ localStorage limpiado correctamente', 'success');
+            } catch (e) {
+                showResult('❌ Error al limpiar localStorage: ' + e.message, 'error');
+            }
+        }
+
+        function clearSessionStorage() {
+            try {
+                sessionStorage.clear();
+                showResult('✅ sessionStorage limpiado correctamente', 'success');
+            } catch (e) {
+                showResult('❌ Error al limpiar sessionStorage: ' + e.message, 'error');
+            }
+        }
+
+        function clearAll() {
+            clearLocalStorage();
+            clearSessionStorage();
+            showResult('✅ Todo limpiado correctamente. Recarga la página para empezar desde cero.', 'success');
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = type === 'success' ? 'success' : 'info';
+            resultDiv.textContent = message;
+        }
+
+        // Mostrar información sobre qué se va a limpiar
+        window.onload = function() {
+            const lsKeys = Object.keys(localStorage);
+            const ssKeys = Object.keys(sessionStorage);
+            const info = `LocalStorage: ${lsKeys.length} items | SessionStorage: ${ssKeys.length} items`;
+            showResult(info, 'info');
+        };
+    </script>
+</body>
+</html>
+

@@ -40,6 +40,9 @@ import {
   type InsertTransaction,
   type Notification,
   type InsertNotification,
+  type AuditLog,
+  type InsertAuditLog,
+  auditLogs,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -50,7 +53,9 @@ export interface IStorage {
   
   getCommunities(): Promise<Community[]>;
   getCommunity(id: string): Promise<Community | undefined>;
+  getCommunityBySlug(slug: string): Promise<Community | undefined>;
   createCommunity(community: InsertCommunity): Promise<Community>;
+  createAuditLog(logData: InsertAuditLog): Promise<AuditLog>;
   
   getProviders(): Promise<Provider[]>;
   getProvider(id: string): Promise<Provider | undefined>;
@@ -136,18 +141,48 @@ export class DatabaseStorage implements IStorage {
 
   async upsertUser(userData: UpsertUser): Promise<User> {
     if (!db) throw new Error("Database not initialized");
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
-    return user;
+    
+    // Verificar si el usuario ya existe
+    const existingUser = await this.getUser(userData.id);
+    
+    if (existingUser) {
+      // Si el usuario existe, hacer un UPDATE
+      const updateFields: Partial<UpsertUser> = {
+        updatedAt: new Date(),
+      };
+      
+      // Solo incluir campos que están definidos (no null/undefined)
+      if (userData.email !== undefined) updateFields.email = userData.email;
+      if (userData.firstName !== undefined) updateFields.firstName = userData.firstName;
+      if (userData.lastName !== undefined) updateFields.lastName = userData.lastName;
+      if (userData.passwordHash !== undefined) updateFields.passwordHash = userData.passwordHash;
+      if (userData.profileImageUrl !== undefined) updateFields.profileImageUrl = userData.profileImageUrl;
+      if (userData.role !== undefined) updateFields.role = userData.role;
+      if (userData.communityId !== undefined) updateFields.communityId = userData.communityId;
+      if (userData.propertyUnit !== undefined) updateFields.propertyUnit = userData.propertyUnit;
+      if (userData.emailVerified !== undefined) updateFields.emailVerified = userData.emailVerified;
+      if (userData.emailVerificationToken !== undefined) updateFields.emailVerificationToken = userData.emailVerificationToken;
+      if (userData.emailVerificationExpires !== undefined) updateFields.emailVerificationExpires = userData.emailVerificationExpires;
+      
+      const [user] = await db
+        .update(users)
+        .set(updateFields)
+        .where(eq(users.id, userData.id))
+        .returning();
+      return user;
+    } else {
+      // Si el usuario no existe, hacer un INSERT
+      // Asegurarse de que todos los campos requeridos estén presentes
+      if (!userData.email || !userData.passwordHash) {
+        throw new Error("Email and passwordHash are required for new users");
+      }
+      
+      const [user] = await db
+        .insert(users)
+        .values(userData)
+        .returning();
+      return user;
+    }
   }
 
   async getCommunities(): Promise<Community[]> {
@@ -557,6 +592,20 @@ export class DatabaseStorage implements IStorage {
       totalRatings: providerRatings.length,
     };
   }
+
+  async createAuditLog(logData: InsertAuditLog): Promise<AuditLog> {
+    if (!db) throw new Error("Database not initialized");
+    const [log] = await db.insert(auditLogs).values(logData).returning();
+    return log;
+  }
+
+  async getCommunityBySlug(slug: string): Promise<Community | undefined> {
+    if (!db) return undefined;
+    const [community] = await db.select().from(communities).where(eq(communities.slug, slug));
+    return community;
+  }
 }
 
-export const storage = new DatabaseStorage();
+// DatabaseStorage is already exported above as: export class DatabaseStorage
+// Storage instance is now created via factory in server/storage/factory.ts
+// Import storage from "./storage/data-storage" instead of here

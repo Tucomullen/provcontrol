@@ -28,11 +28,26 @@ export default function Landing() {
                 La primera plataforma especializada para comunidades de propietarios que garantiza 
                 la transparencia, controla el gasto descontrolado y verifica la calidad de los proveedores.
               </p>
-              <Button size="lg" asChild data-testid="button-get-started">
-                <a href="/login" className="text-lg">
-                  Comenzar ahora
-                </a>
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button size="lg" asChild data-testid="button-get-started">
+                  <a href="/onboarding/create-community" className="text-lg">
+                    Crear mi comunidad
+                  </a>
+                </Button>
+                <Button size="lg" variant="outline" asChild>
+                  <a href="/register/provider" className="text-lg">
+                    Soy proveedor
+                  </a>
+                </Button>
+                <Button size="lg" variant="outline" asChild>
+                  <a href="/onboarding/join" className="text-lg">
+                    Tengo invitación
+                  </a>
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground mt-4">
+                Elige la opción que mejor se adapte a ti
+              </p>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-20">
@@ -112,9 +127,15 @@ export default function Landing() {
                   Únete a las comunidades que ya están mejorando su transparencia y control financiero.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="flex justify-center pb-8">
+              <CardContent className="flex flex-col sm:flex-row justify-center gap-4 pb-8">
                 <Button size="lg" asChild>
-                  <a href="/register">Solicitar acceso</a>
+                  <a href="/onboarding/create-community">Crear mi comunidad</a>
+                </Button>
+                <Button size="lg" variant="outline" asChild>
+                  <a href="/register/provider">Soy proveedor</a>
+                </Button>
+                <Button size="lg" variant="outline" asChild>
+                  <a href="/onboarding/join">Tengo invitación</a>
                 </Button>
               </CardContent>
             </Card>

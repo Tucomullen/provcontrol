@@ -44,6 +44,36 @@ export default function Login() {
         description: "Has iniciado sesión correctamente",
       });
 
+      // Verificar estado de onboarding y redirigir
+      try {
+        const onboardingResponse = await fetch("/api/onboarding/status", {
+          credentials: "include",
+        });
+        if (onboardingResponse.ok) {
+          const onboardingStatus = await onboardingResponse.json();
+          
+          // Si necesita verificar email y es presidente
+          if (onboardingStatus.needsEmailVerification && data.user?.role === "presidente") {
+            setLocation("/onboarding/verify-email");
+            return;
+          }
+          
+          // Si no tiene comunidad y puede crear una
+          if (!onboardingStatus.userHasCommunity && onboardingStatus.canCreateCommunity) {
+            setLocation("/onboarding/create-community");
+            return;
+          }
+          
+          // Si no tiene comunidad pero hay comunidades, debe unirse
+          if (!onboardingStatus.userHasCommunity && onboardingStatus.hasCommunities) {
+            setLocation("/onboarding/join");
+            return;
+          }
+        }
+      } catch (error) {
+        console.error("Error checking onboarding status:", error);
+      }
+      
       // Redirect to dashboard
       setLocation("/");
     } catch (error: any) {
