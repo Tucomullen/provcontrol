@@ -22,7 +22,4 @@ uploads/
 *.log
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*.env
-test-results/
-playwright-report/
-uploads/
+yarn-error.log*
